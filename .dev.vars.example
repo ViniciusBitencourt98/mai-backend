@@ -1,0 +1,3 @@
+# Comma-separated exact origins. This file contains no secrets.
+# Copy to .dev.vars to allow the local frontend explicitly.
+CORS_ALLOWED_ORIGIN="http://localhost:5173"
