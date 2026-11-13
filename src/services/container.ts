@@ -1,3 +1,5 @@
+import { createNoteScope } from '../infra/database/note-scope';
+import type { NoteDependencies } from './note.service';
 import { createProjectScope } from '../infra/database/project-scope';
 import type { ProjectDependencies } from './project.service';
 import { createPersistenceScope } from '../infra/database/scope';
@@ -11,8 +13,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const auth: AuthDependencies = { run: createAuthScope(bindings), settings: authSettings(bindings),
     ...(clientAddress ? { clientAddress } : {}) };
   const projects: ProjectDependencies = { run: createProjectScope(bindings) };
-  return { projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const notes: NoteDependencies = { run: createNoteScope(bindings) };
+  return { notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects'> & { projects?: ProjectDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes'> & { projects?: ProjectDependencies; notes?: NoteDependencies };

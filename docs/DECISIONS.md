@@ -30,3 +30,15 @@ O agente deve propor ADR em PR; não deve decidir silenciosamente mudanças de s
   recebem 404 idêntico; CSRF reutiliza os middlewares da autenticação.
 - Conforme autorização do ticket, pendências de Neon/PoC remota não bloquearam
   implementação local. Isso não conclui os gates remotos de F0/F1.
+
+## TASK-BE-005 — notas e cardinalidade (recorte de ADR-002)
+
+Conforme o ticket, nota possui zero ou um projeto diretamente em projectId,
+removível via null, com isolamento validado no serviço e FK composta no banco.
+A proposta anterior de note_links não é implementada nesse recorte; eventos e
+cardinalidade dos outros módulos continuam pendentes. Projetos arquivados do mesmo
+proprietário podem ser vinculados; arquivamento não invalida histórico.
+Tags são TEXT[] com GIN: simplicidade e busca PostgreSQL por tag exata sem catálogo
+global. Campos com identidade/metadados ou renomeação global exigirão migração para
+modelo normalizado futuro. O endpoint usa tag singular, normalizada, por consulta.
+Sem editor rico, sem delete definitivo e sem alteração na arquitetura de auth.

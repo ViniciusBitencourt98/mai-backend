@@ -30,3 +30,22 @@ Nesta execução `npm ci` encontrou 403 no checksum do CDN Prisma. O client foi
 regenerado pelas APIs oficiais com pacotes npm 7.10.1 conforme a alternativa já
 descrita em PRISMA-NEON-LOCAL.md, sem editar gerados ou desativar TLS/checksum.
 O CLI padrão e a execução real em Neon/remoto permanecem pendentes. Nenhum deploy.
+
+## TASK-BE-005 — anotações
+
+29 testes isolados em tests/notes/notes.test.ts: DTOs, criação independente/vinculada,
+projeto inválido/externo, conteúdo/tags/desvinculação, filtros/páginas, arquivo e
+restauração, autenticação/CSRF/CORS, isolamento HTTP e predicados Prisma com mock.
+Não representam PostgreSQL real. A suíte completa passou: 162 testes em 14 arquivos;
+lint/typecheck e build dry-run aprovados (XDG_CONFIG_HOME=/workspace/.config,
+WRANGLER_SEND_METRICS=false). Nenhuma dependência nova.
+
+A execução de test:integration identificou 5 skipped em 3 arquivos por ausência
+das URLs Neon de desenvolvimento. O novo notes.integration.ts usa banco real,
+sem mocks, para persistência, tags/filtros, arquivo/restauração, vínculo opcional e
+FK composta rejeitando projeto de outro proprietário. Não aplica migrations e
+limpa somente registros sintéticos próprios. Usar o fluxo autorizado de banco de
+desenvolvimento do roteiro Prisma/Neon para executar; nunca produção.
+Client regenerado com APIs oficiais Prisma 7.10.1 conforme a alternativa já
+documentada em PRISMA-NEON-LOCAL.md; sem desativar TLS/checksum ou editar gerados.
+Neon e Cloudflare remoto continuam pendentes. Nenhuma migration aplicada/deploy.

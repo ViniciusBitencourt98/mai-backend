@@ -1,19 +1,10 @@
-import type { Request, RequestHandler } from 'express';
-import type { z } from 'zod';
+import { parse, json } from './input';
+import type { RequestHandler } from 'express';
 import { HttpError } from '../errors/http-error';
 import { authentication } from '../middlewares/authentication';
 import { createProjectDto, patchProjectDto, projectIdDto, projectQueryDto, projectResponse } from '../projects/dto';
 import type { ProjectDependencies } from '../services/project.service';
 
-function parse<T>(schema: z.ZodType<T>, input: unknown): T {
-  const result = schema.safeParse(input);
-  if (!result.success) throw new HttpError(400, 'VALIDATION_ERROR', 'Invalid project input');
-  return result.data;
-}
-function json(req: Request) {
-  if (!req.is('application/json')) throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Use application/json');
-  return req.body as unknown;
-}
 export function projectControllers(dependencies: ProjectDependencies) {
   const list: RequestHandler = async (req, res) => {
     const query = parse(projectQueryDto, req.query);
