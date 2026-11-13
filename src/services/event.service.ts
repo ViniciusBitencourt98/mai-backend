@@ -15,7 +15,7 @@ function baseOccurrence(snapshot: EventSnapshot, rule: EventRule, date: string):
   const endAt = new Date(startAt.getTime() + rule.anchorEndAt.getTime() - rule.anchorStartAt.getTime());
   if (endAt.getUTCFullYear() > 9999) return null;
   return { ruleId: rule.id, date, title: snapshot.event.title, description: snapshot.event.description,
-    location: snapshot.event.location, startAt, endAt, cancelled: false, updatedAt: rule.updatedAt };
+    location: snapshot.event.location, startAt, endAt, cancelled: false, updatedAt: new Date(Math.max(rule.updatedAt.getTime(), snapshot.event.updatedAt.getTime())) };
 }
 export class EventService {
   constructor(private readonly repository: EventRepository, private readonly now = () => new Date()) {}

@@ -18,7 +18,7 @@ const input=(extra={})=>createEventDto.parse({title:'Interview',startAt:'2026-03
 const rule=(extra={})=>createRuleDto.parse({frequency:'DAILY',startDate:'2026-03-07',timezone:'America/New_York',count:3,...extra});
 const query=(extra={})=>eventOccurrenceQueryDto.parse({from:'2026-03-01T00:00:00Z',to:'2026-04-01T00:00:00Z',...extra});
 function fake(){
- const snapshots=new Map<string,EventSnapshot>();const projects=new Map<string,string>();const now=new Date('2026-03-01T12:00:00Z');
+ const snapshots=new Map<string,EventSnapshot>();const projects=new Map<string,string>();let now=new Date('2026-03-01T12:00:00Z');
  const repository:EventRepository={
   async create(ownerId,data){const event={...data,id:randomUUID(),ownerId,archivedAt:null,createdAt:now,updatedAt:now};snapshots.set(event.id,{event,rules:[],exceptions:[]});return event;},
   async ownsProject(ownerId,id){return projects.get(id)===ownerId;},
@@ -31,7 +31,7 @@ function fake(){
   },
   async list(ownerId,q){return [...snapshots.values()].map((s)=>s.event).filter((e)=>e.ownerId===ownerId&&(q.includeArchived||!e.archivedAt)&&(!q.projectId||e.projectId===q.projectId)&&(!q.q||e.title.toLowerCase().includes(q.q.toLowerCase()))&&(!q.from||e.endAt>q.from)&&(!q.to||e.startAt<q.to)).sort((a,b)=>(a[q.sort].getTime()-b[q.sort].getTime())*(q.order==='asc'?1:-1)||a.id.localeCompare(b.id)).slice((q.page-1)*q.limit,q.page*q.limit+1);}
  };
- return {repository,snapshots,projects,service:new EventService(repository,()=>now)};
+ return {repository,snapshots,projects,service:new EventService(repository,()=>now),advance:()=>{now=new Date(now.getTime()+60000);}};
 }
 const servers:Server[]=[];
 afterEach(async()=>{await Promise.all(servers.splice(0).map((server)=>new Promise<void>((resolve)=>{server.close(()=>resolve());server.closeAllConnections();})));});
@@ -131,4 +131,13 @@ it('Prisma interval queries use overlap predicates, limits and owner; foreign mu
  const q=eventQueryDto.parse({from:'2026-03-02T00:00:00Z',to:'2026-03-03T00:00:00Z',page:'2',limit:'5'});await repo.list('owner',q);
  expect(event.findMany).toHaveBeenCalledWith({where:{ownerId:'owner',archivedAt:null,endAt:{gt:q.from},startAt:{lt:q.to}},orderBy:[{startAt:'asc'},{id:'asc'}],skip:5,take:6});
  await expect(repo.mutate('other','id',()=>({change:{},result:null}))).rejects.toMatchObject({status:404});expect(eventRecurrence.findMany).not.toHaveBeenCalled();
+});
+
+it('reflects master metadata timestamps in calculated occurrences while preserving stored exceptions',async()=>{
+ const app=fake();const event=await app.service.create('owner',input());const series=await app.service.configure('owner',event.id,rule());
+ const saved=await app.service.exception('owner',event.id,series.id,'2026-03-07',null,true);
+ app.advance();const changed=await app.service.update('owner',event.id,{title:'Updated interview'});
+ const occurrences=await app.service.occurrences('owner',event.id,query());
+ expect(occurrences.items.find((row)=>row.date==='2026-03-08')).toMatchObject({title:'Updated interview',updatedAt:changed.updatedAt});
+ expect(occurrences.items.find((row)=>row.date==='2026-03-07')).toMatchObject({title:'Interview',updatedAt:saved.updatedAt,cancelled:true});
 });

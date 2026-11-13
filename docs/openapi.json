@@ -13192,7 +13192,8 @@
           },
           "updatedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Calculadas: maior timestamp do mestre e da versão. Exceções: timestamp da edição/cancelamento persistido."
           }
         }
       },

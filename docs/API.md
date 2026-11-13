@@ -461,3 +461,6 @@ Cache-Control no-store. ownerId vem da sessão. 400 validação/JSON/janela, 401
 EVENT_LIMIT, 413 >100 KiB, 415 mídia não JSON em POST/PATCH com payload, 500 genérico.
 Contrato detalhado e exemplos no OpenAPI. Sem notificações, sincronização Google,
 calendário visual, deploy ou alterações nos contratos de tarefas.
+
+Em ocorrências calculadas, updatedAt usa o mais recente entre mestre e versão da
+regra, refletindo metadados herdados. Exceções materializadas mantêm seu timestamp.
