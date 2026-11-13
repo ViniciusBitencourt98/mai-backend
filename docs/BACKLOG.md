@@ -193,3 +193,10 @@ Sem telas, calendário agregado, notificações ou sincronização externa. Vín
 notas/decupagens a eventos são extensão futura fora deste ticket. Neon real,
 constraints/concorrência e gates remotos continuam pendentes, sem marcação de
 conclusão antes da revisão/validação autorizada.
+
+## TASK-BE-010 — F3-13
+
+GET /calendar agrega projeções de tarefas/eventos e ocorrências pela versão atual,
+com auth/ownership, janela/paginação/limites e reutilização dos serviços existentes.
+Sem persistência própria ou novo schema. Preparado para revisão; Neon real permanece
+pendente. F3-14/F3-15, publicações e demais módulos fora do escopo.

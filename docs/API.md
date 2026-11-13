@@ -464,3 +464,47 @@ calendário visual, deploy ou alterações nos contratos de tarefas.
 
 Em ocorrências calculadas, updatedAt usa o mais recente entre mestre e versão da
 regra, refletindo metadados herdados. Exceções materializadas mantêm seu timestamp.
+
+## Calendário agregado — TASK-BE-010 / F3-13
+
+`GET /calendar` exige sessão e retorna projeções mínimas, sem persistência própria.
+Query estrita: from/to ISO 8601 com Z/offset, from < to, janela máxima 31*24h;
+types opcional `TASK`, `EVENT` ou `TASK,EVENT` (padrão ambos, sem espaços/repetições);
+page=1 (até 10.000), limit=20 (1–100). Parâmetros repetidos/desconhecidos retornam
+400. Retorno `{items: CalendarItem[],page:{number,limit,hasMore},timezone}`.
+
+Itens discriminados por type TASK/EVENT. Campos comuns: id,masterId,ruleId nullable,
+version nullable,occurrenceDate nullable,title,recurring,modified,href,timezone.
+Id de ocorrência é ruleId:data original; use type+id como chave no frontend.
+href aponta para /tasks/:id ou /events/:id. modified indica estado individual de
+tarefa persistido ou exceção de evento; mestres pontuais têm false. TASK adiciona
+date YYYY-MM-DD e completed; não atribui hora/endAt artificiais. EVENT adiciona
+startAt/endAt UTC. timezone do item é o da regra, do evento único ou da preferência
+do usuário para tarefa única; timezone externo é a preferência do usuário.
+
+Eventos usam overlap semiaberto [from,to), incluindo compromissos atravessando
+limites. Tarefas civis entram se seu dia intersecta a janela no fuso correspondente
+(localToday(from) até localToday(to-1ms)). Tarefas pontuais sem dueDate são omitidas;
+startDate isolada não vira compromisso. Concluídas aparecem com completed=true,
+canceladas e arquivadas são omitidas. Mestres recorrentes não aparecem novamente
+como itens pontuais. Conclusão do mestre não se propaga às ocorrências.
+
+Expansão delegada a RecurrenceService/EventService, sem terceiro motor. Somente a
+versão atual participa. Séries pausadas/encerradas mantêm apenas estados/exceções
+já persistidos conforme BE-008/009; eventos cancelled=true são omitidos. Exceções
+movidas substituem a data original e entram/saem pelo intervalo final. As políticas
+existentes de DST, clamp mensal e limites de geração permanecem inalteradas.
+
+Ordenação determinística lexicográfica da data civil (TASK) ou instante UTC (EVENT),
+seguida de type e id; tarefas sem hora ficam no início da sua data, sem criar um
+instante UTC fictício. A paginação é offset após agregação; mudanças concorrentes
+podem deslocar páginas. Não há snapshot global entre serviços, e ruleId é fixado na
+expansão para impedir misturar versões durante edição concorrente.
+
+Limites: 100 mestres selecionados por tipo e 10.000 itens processados na expansão (incluindo cancelados antes da filtragem). Excesso
+retorna 409 CALENDAR_LIMIT, sem resposta parcial. Séries não arquivadas contam no
+limite mesmo se não gerarem itens na janela. Use types/janela menor ou endpoints
+de domínio para conjuntos maiores. Limites próprios dos serviços continuam válidos.
+401 sem sessão, 400 query, 409 limites, 500 interno/503 serviço não configurado;
+403 CORS se Origin proibida. Cache-Control no-store, CORS com credenciais. Sem
+migrations/schema novos, publicações, dashboard, ICS, UI ou notificações.
