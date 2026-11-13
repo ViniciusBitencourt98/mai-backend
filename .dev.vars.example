@@ -4,3 +4,10 @@ CORS_ALLOWED_ORIGIN="http://localhost:5173"
 # Opcional: colar somente a URL pooled da branch Neon de desenvolvimento.
 # DATABASE_URL="postgresql://USER:PASSWORD@ep-DEVELOPMENT-pooler.REGION.aws.neon.tech/DB?sslmode=require"
 # DIRECT_URL pertence ao CLI em .env, nunca é necessário no Worker.
+
+# Auth local: insecure cookie is accepted ONLY on explicit loopback origins.
+AUTH_ENV="development"
+AUTH_PUBLIC_ORIGIN="http://localhost:8787"
+AUTH_COOKIE_SECURE="false"
+AUTH_COOKIE_SAME_SITE="lax"
+# Remote HTTPS defaults to Secure + SameSite=Lax. Cross-site requires explicit None.

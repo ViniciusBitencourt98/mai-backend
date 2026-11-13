@@ -47,3 +47,15 @@ Este documento guia modelagem e relacionamentos; **não é um schema Prisma pron
 - Propor soft delete/arquivamento para entidades com vínculos e status. Definir política de retenção e exclusão definitiva no ADR antes da migration.
 - Ao apagar evento associado a nota/decupagem, desvincular ou impedir exclusão com confirmação; não remover nota.
 - Atualização de tarefa/evento/publicação que invalide lembrete deve cancelar/obsoletar a outbox correspondente de forma transacional.
+
+## Identidade implementada — F1-01 a F1-04
+
+A migration de autenticação implementa somente o subconjunto de identidade:
+`users` (UUID, e-mail normalizado único, nome, hash de senha, disabled_at e timestamps),
+`user_preferences` (1:1, timezone e email_enabled), `sessions` (hash de token único,
+usuária, criação, expiração e revogação) e `auth_throttles` (buckets técnicos de
+limite de login). Índices de sessão por usuária/expiração e de throttle por
+expiração. O banco também restringe e-mail a minúsculas. Senhas/tokens brutos não
+são persistidos; não há entidade de negócio nova. Regras e retenção estão na
+[ADR-001](ADR-001-AUTHENTICATION.md). Aplicação das migrations e persistência real
+em PostgreSQL continuam pendentes nesta entrega, sem conexão de desenvolvimento.

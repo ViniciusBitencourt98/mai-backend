@@ -129,3 +129,19 @@ local; sem URLs, os casos são explicitamente skipped. Não há migrations autom
 A conexão Neon real e a validação Prisma no Cloudflare remoto continuam pendentes.
 Nesta instância há ainda um bloqueio do CDN do CLI Prisma; consulte no roteiro
 as evidências, a geração usada para validar o código e a configuração de rede necessária.
+
+## Autenticação (F1-01 a F1-04)
+
+Implementados `POST /auth/login`, `POST /auth/logout` e `GET /auth/me`, com
+sessões opacas, cookie HttpOnly, expiração de 12 horas, revogação, CSRF e limite
+de tentativas. Não há cadastro público. A [ADR-001](docs/ADR-001-AUTHENTICATION.md)
+documenta a estratégia, configurações por ambiente e criação administrativa da
+primeira usuária de desenvolvimento. [OpenAPI](docs/openapi.json) define os DTOs.
+
+Para Wrangler HTTP local, copie as configurações AUTH de `.dev.vars.example`;
+origens devem ser exatas e corresponder às portas em uso. O frontend deve enviar
+credentials e, no logout, X-CSRF-Token obtido de login/me. Nenhuma credencial padrão
+ou usuária de teste é criada pela aplicação. Sem banco, /health continua disponível,
+mas login persistente depende de aplicar as migrations em desenvolvimento.
+Os testes isolados não comprovam persistência real; Neon e Cloudflare remoto
+continuam pendentes. Não execute migrations ou bootstrap em produção.
