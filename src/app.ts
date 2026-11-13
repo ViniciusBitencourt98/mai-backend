@@ -1,3 +1,4 @@
+import { createDecupageRouter } from './routes/decupage.routes';
 import { createNoteRouter } from './routes/note.routes';
 import { createProjectRouter } from './routes/project.routes';
 import express, { type Router } from 'express';
@@ -25,6 +26,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use('/auth', createAuthRouter(options.services?.auth));
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
   app.use('/notes', createNoteRouter(options.services?.auth, options.services?.notes));
+  app.use('/decupages', createDecupageRouter(options.services?.auth, options.services?.decupages));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);

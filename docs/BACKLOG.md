@@ -159,3 +159,11 @@ tags, endpoints /notes, filtros, paginação, ownership e OpenAPI preparados par
 revisão. Busca implementada por título; vínculos com eventos, buscas mais amplas
 e telas continuam fora do ticket. Neon real/migration aplicada continuam pendentes;
 não marcar gates remotos nem tickets completos sem revisão.
+
+## Rastreabilidade TASK-BE-006
+
+Recorte backend F2-09/F2-10/F2-12: Decupage e segmentos com DTOs, migration,
+CRUD/arquivo/restauração, tags/filtros e reordenação transacional preparados para
+revisão. Eventos, telas, upload e processamento de mídia fora do escopo. Integração
+real Neon, constraints e concorrência no banco aguardam ambiente de desenvolvimento;
+nenhum gate remoto ou ticket completo marcado sem revisão.

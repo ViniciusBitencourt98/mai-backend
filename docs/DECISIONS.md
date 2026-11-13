@@ -42,3 +42,15 @@ Tags são TEXT[] com GIN: simplicidade e busca PostgreSQL por tag exata sem cat�
 global. Campos com identidade/metadados ou renomeação global exigirão migração para
 modelo normalizado futuro. O endpoint usa tag singular, normalizada, por consulta.
 Sem editor rico, sem delete definitivo e sem alteração na arquitetura de auth.
+
+## TASK-BE-006 — decupagens e timecodes
+
+Zero ou um projeto opcional, sem evento até existir o modelo. Decupagem pode não
+ter segmentos. Tags seguem notas. Timecode inicial obrigatório neste ticket
+explícito, sobrepondo a proposta inicial de início opcional em RF-06.2. Usar offsets
+INT em milissegundos, não strings HH:MM:SS nem instantes. Ordem editorial independente
+da cronologia, sobreposição permitida. Reorder envia todos os IDs, com conjunto
+validado dentro da transação; limite 100 mantém leitura/resposta/trabalho limitados.
+Bloqueio no pai serializa operações concorrentes, UNIQUE adiada permite swaps e
+rollback impede estado parcial. Projeto arquivado e decupagem arquivada continuam
+editáveis; arquivar preserva registros. Nenhuma alteração na arquitetura de auth.

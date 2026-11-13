@@ -89,3 +89,24 @@ RESTRICT impede apagar projeto referenciado; futura exclusão deverá desvincula
 explicitamente, nunca apagar notas em cascata. Arquivar não modifica associações.
 A migration 20261113000400_notes não foi aplicada; validar em desenvolvimento antes
 de produção. Rollback com remoção da tabela perde notas e exige backup/decisão.
+
+## Decupagens — TASK-BE-006
+
+Decupage segue a propriedade/índices/tags GIN de Note, com descrição nullable e FK
+composta opcional (project_id,owner_id) para projetos próprios, RESTRICT, sem
+cascata de projeto para decupagem. Nenhuma relação de evento existe neste recorte.
+DecupageSegment pertence a uma decupagem; posições inteiras contíguas a partir de
+zero. start_ms INT não negativo e end_ms INT nullable >= start_ms, com CHECKs SQL.
+Milissegundos relativos até 2.147.483.647; description TEXT, timestamps UTC.
+Limite operacional de 100 segmentos, validado sob bloqueio do pai na transação.
+Índice (decupage_id,position), UNIQUE correspondente DEFERRABLE INITIALLY DEFERRED
+na migration SQL para permitir trocas sem conflito intermediário. Essa restrição
+adiada não é expressável no schema Prisma e deve ser preservada em migrations
+futuras. Operações de segmentos bloqueiam o pai via UPDATE filtrado por owner_id,
+validam o estado atual e persistem adições/edições/exclusões na mesma transação.
+Qualquer falha reverte inclusive updated_at do pai.
+
+Migration 20261113000500_decupages versionada, não aplicada. FK do segmento usa
+CASCADE somente em relação ao pai; não existe endpoint para excluir esse pai.
+Remoção explícita de segmento compacta posições. Rollback removendo tabelas perde
+dados e requer backup/decisão, sem execução automática.

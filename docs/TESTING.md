@@ -49,3 +49,22 @@ desenvolvimento do roteiro Prisma/Neon para executar; nunca produção.
 Client regenerado com APIs oficiais Prisma 7.10.1 conforme a alternativa já
 documentada em PRISMA-NEON-LOCAL.md; sem desativar TLS/checksum ou editar gerados.
 Neon e Cloudflare remoto continuam pendentes. Nenhuma migration aplicada/deploy.
+
+## TASK-BE-006 — decupagens
+
+39 testes isolados: CRUD/validações do pai, vínculo opcional/externo, filtros e
+paginação, auth/CSRF/CORS, segmentos, limites de timecode e coleção, merge de
+edição, remoção/compactação, permutação exata, preservação ao arquivar e predicados
+Prisma/ordem do bloqueio em transação mockada. Não comprovam PostgreSQL real.
+A suíte completa executou 201 testes em 15 arquivos, com lint/typecheck e build
+dry-run aprovados (XDG_CONFIG_HOME=/workspace/.config, WRANGLER_SEND_METRICS=false).
+
+`test:integration`: 7 skipped em 4 arquivos sem URLs Neon de desenvolvimento.
+Os 2 novos testes reais em decupages.integration.ts (sem mocks) cobrem persistência,
+reordenação com swaps, rollback de operações inválidas, CHECK de timecode e
+adições concorrentes por clients separados. Constraints/migration e concorrência
+real continuam pendentes; não declarar mocks como validação dessas garantias.
+Aplique migrations separadamente somente em banco de desenvolvimento autorizado.
+O teste limpa apenas registros sintéticos próprios. Sem migration/deploy remoto.
+Client gerado por APIs oficiais Prisma 7.10.1 conforme roteiro já documentado,
+sem editar gerados ou desativar TLS/checksum; dependências/lockfile inalterados.
