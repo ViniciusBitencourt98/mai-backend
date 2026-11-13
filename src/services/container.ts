@@ -1,3 +1,5 @@
+import { createRecurrenceScope } from '../infra/database/recurrence-scope';
+import type { RecurrenceDependencies } from './recurrence.service';
 import { createTaskScope } from '../infra/database/task-scope';
 import type { TaskDependencies } from './task.service';
 import { createDecupageScope } from '../infra/database/decupage-scope';
@@ -20,8 +22,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const notes: NoteDependencies = { run: createNoteScope(bindings) };
   const decupages: DecupageDependencies = { run: createDecupageScope(bindings) };
   const tasks: TaskDependencies = { run: createTaskScope(bindings) };
-  return { tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const recurrence: RecurrenceDependencies = { run: createRecurrenceScope(bindings) };
+  return { recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies };

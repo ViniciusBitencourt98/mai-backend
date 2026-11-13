@@ -6506,6 +6506,1507 @@
         },
         "description": "Retorna coleção completa ordenada, posições 0..n-1, máximo 100. Mutações transacionais bloqueiam o pai por proprietário; qualquer falha reverte tudo. Subtarefa deve pertencer à tarefa da URL. Não altera status/completedAt do pai; atualiza updatedAt. Permitido em tarefas arquivadas/concluídas. Reorder exige todos os IDs uma vez; adição/remoção concorrente pode exigir recarregar. Complete/reopen são idempotentes quanto ao booleano."
       }
+    },
+    "/tasks/{id}/recurrence": {
+      "post": {
+        "summary": "Configurar recorrência de tarefa existente",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000030",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRecurrence"
+              },
+              "example": {
+                "frequency": "DAILY",
+                "startDate": "2026-11-01",
+                "timezone": "America/Bahia"
+              }
+            }
+          }
+        },
+        "description": "Crie uma tarefa com POST /tasks e configure com este endpoint. Uma configuração por tarefa; repetição retorna 409. Não duplica tarefa nem cria ocorrências futuras."
+      },
+      "get": {
+        "summary": "Consultar regra atual e próxima ocorrência",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrenceDetail"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000030",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "nextOccurrenceDate": "2026-11-13",
+                  "taskArchived": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar regra criando nova versão",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000040",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 2,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 2,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": "2027-01-31",
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTaskRecurrence"
+              },
+              "example": {
+                "interval": 2,
+                "endDate": "2027-01-31"
+              }
+            }
+          }
+        },
+        "description": "Cria novo UUID e incrementa versão. Histórico anterior permanece consultável com ruleId; datas calculadas usam apenas a versão atual. Estado PAUSED é preservado; ENDED não pode editar. Máximo 100 versões. Releia o ID após PATCH."
+      }
+    },
+    "/tasks/{id}/recurrence/suspend": {
+      "post": {
+        "summary": "Suspender recorrência",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000030",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 1,
+                  "state": "PAUSED",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Idempotente quanto ao estado. PAUSED/ENDED não calculam datas, mas preservam estados já registrados. Resume restaura o calendário original, sem mudar âncora/count. ENDED é terminal e não permite resume/PATCH. Pai arquivado bloqueia mutações; restauração do pai não muda estado da regra."
+      }
+    },
+    "/tasks/{id}/recurrence/resume": {
+      "post": {
+        "summary": "Retomar recorrência",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000030",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Idempotente quanto ao estado. PAUSED/ENDED não calculam datas, mas preservam estados já registrados. Resume restaura o calendário original, sem mudar âncora/count. ENDED é terminal e não permite resume/PATCH. Pai arquivado bloqueia mutações; restauração do pai não muda estado da regra."
+      }
+    },
+    "/tasks/{id}/recurrence/end": {
+      "post": {
+        "summary": "Encerrar recorrência",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000030",
+                  "taskId": "00000000-0000-4000-8000-000000000010",
+                  "version": 1,
+                  "state": "ENDED",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-11-01",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": null,
+                  "timezone": "America/Bahia",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Idempotente quanto ao estado. PAUSED/ENDED não calculam datas, mas preservam estados já registrados. Resume restaura o calendário original, sem mudar âncora/count. ENDED é terminal e não permite resume/PATCH. Pai arquivado bloqueia mutações; restauração do pai não muda estado da regra."
+      }
+    },
+    "/tasks/{id}/occurrences": {
+      "get": {
+        "summary": "Consultar ocorrências em janela limitada",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Primeira data civil inclusiva."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Última data inclusiva, >= from; no máximo 365 dias de diferença."
+          },
+          {
+            "name": "ruleId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Opcional, padrão versão atual. Histórica somente estados já registrados."
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Cursor exclusivo dentro de from/to."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            },
+            "description": "Máximo 100 registros, ordem date asc."
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOccurrencePage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "ruleId": "00000000-0000-4000-8000-000000000030",
+                      "date": "2026-11-12",
+                      "completedAt": null
+                    }
+                  ],
+                  "page": {
+                    "limit": 100,
+                    "nextAfter": null
+                  },
+                  "calculated": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sem escrita. Chave estável ruleId+date. Datas civis inclusivas, janela máxima 366 dias; gera no máximo 10.000 datas até 100 anos da âncora (ou 9999). Versão atual ativa e pai não arquivado calculam datas; versões anteriores, suspensas/encerradas ou pai arquivado retornam somente estados persistidos. Filtros/cursores desconhecidos ou repetidos retornam 400. Exemplo: /tasks/{id}/occurrences?from=2026-11-01&to=2026-11-30&limit=20."
+      }
+    },
+    "/tasks/{id}/occurrences/{ruleId}/{date}/complete": {
+      "post": {
+        "summary": "Concluir ocorrência individual",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOccurrence"
+                },
+                "example": {
+                  "ruleId": "00000000-0000-4000-8000-000000000030",
+                  "date": "2026-11-12",
+                  "completedAt": "2026-11-13T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Somente versão atual ACTIVE e pai não arquivado. Data deve pertencer ao calendário (404). Materializa só estado daquela ocorrência; tarefa principal e outras datas não mudam. Complete repetido preserva completedAt e não duplica evento histórico; reopen limpa completedAt. Mudanças reais geram log transacional. Ocorrências futuras válidas podem ser concluídas. Versões antigas são somente leitura (409)."
+      }
+    },
+    "/tasks/{id}/occurrences/{ruleId}/{date}/reopen": {
+      "post": {
+        "summary": "Reabrir ocorrência individual",
+        "tags": [
+          "Task recurrence"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: tarefa/regra/ocorrência inexistente ou pertencente a outra conta; resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOccurrence"
+                },
+                "example": {
+                  "ruleId": "00000000-0000-4000-8000-000000000030",
+                  "date": "2026-11-12",
+                  "completedAt": null
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RECURRENCE_CONFLICT (já configurada, encerrada, arquivada, versão histórica ou regra não ativa); RECURRENCE_LIMIT (máximo 100 versões).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Somente versão atual ACTIVE e pai não arquivado. Data deve pertencer ao calendário (404). Materializa só estado daquela ocorrência; tarefa principal e outras datas não mudam. Complete repetido preserva completedAt e não duplica evento histórico; reopen limpa completedAt. Mudanças reais geram log transacional. Ocorrências futuras válidas podem ser concluídas. Versões antigas são somente leitura (409)."
+      }
     }
   },
   "components": {
@@ -7988,6 +9489,333 @@
               "format": "uuid"
             },
             "description": "Permutação completa dos IDs da tarefa. [] somente se vazia."
+          }
+        }
+      },
+      "CreateTaskRecurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "frequency",
+          "startDate",
+          "timezone"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 1,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "default": [],
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "default": null,
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "default": null,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA validado por Intl, incluindo UTC. Define hoje para nextOccurrenceDate; datas são civis sem horário."
+          }
+        }
+      },
+      "PatchTaskRecurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA validado por Intl, incluindo UTC. Define hoje para nextOccurrenceDate; datas são civis sem horário."
+          }
+        },
+        "description": "PATCH cria nova versão/ID com merge e validação completa; ausência preserva, endDate/count null removem limites. Se mudar frequência, ajuste weekdays no mesmo PATCH."
+      },
+      "TaskRecurrence": {
+        "type": "object",
+        "required": [
+          "frequency",
+          "interval",
+          "startDate",
+          "weekdays",
+          "endDate",
+          "count",
+          "timezone",
+          "id",
+          "taskId",
+          "version",
+          "state",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 1,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "default": [],
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "default": null,
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "default": null,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA validado por Intl, incluindo UTC. Define hoje para nextOccurrenceDate; datas são civis sem horário."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PAUSED",
+              "ENDED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskRecurrenceDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaskRecurrence"
+          },
+          {
+            "type": "object",
+            "required": [
+              "nextOccurrenceDate",
+              "taskArchived"
+            ],
+            "properties": {
+              "nextOccurrenceDate": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date",
+                "description": "Primeira data não concluída >= hoje no fuso da regra. Null se inativa/arquivada/exaurida."
+              },
+              "taskArchived": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "TaskOccurrence": {
+        "type": "object",
+        "required": [
+          "ruleId",
+          "date",
+          "completedAt"
+        ],
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskOccurrencePage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "calculated"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/TaskOccurrence"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "limit",
+              "nextAfter"
+            ],
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "nextAfter": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date",
+                "description": "Enviar como after para próxima página, mantendo from/to/ruleId. Exclusivo."
+              }
+            }
+          },
+          "calculated": {
+            "type": "boolean",
+            "description": "true = datas calculadas da regra atual ACTIVE e pai não arquivado; false = somente estados já persistidos."
           }
         }
       }

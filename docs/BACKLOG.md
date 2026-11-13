@@ -175,3 +175,11 @@ CRUD/estados/checklist, ordenação, filtros/atraso, ownership e OpenAPI para re
 Recorrência, notificações, calendário, eventos e telas fora do ticket. Integração
 Neon real/migration aplicada e gates remotos continuam pendentes; não marcar tickets
 completos sem revisão.
+
+## Rastreabilidade TASK-BE-008
+
+Recorte backend F3-01/F3-09/F3-10/F3-11: engine civil limitada, regras versionadas,
+estado/log de ocorrências, suspensão/retomada/fim, API e OpenAPI para revisão.
+Sem RRULE complexa, eventos, notificações ou calendário visual. Integração Neon,
+constraints/concorrência reais e gates remotos continuam pendentes; não marcar
+etapas completas antes da revisão e validação autorizada.

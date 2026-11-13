@@ -88,3 +88,23 @@ de registros sintéticos próprios. Aguardar banco de desenvolvimento autorizado
 para validar os CHECKs, UNIQUE adiada e concorrência; produção fora do escopo.
 Client gerado com APIs oficiais Prisma 7.10.1 conforme o roteiro já documentado,
 sem editar gerados/desativar TLS ou checksum. Sem dependências/lockfile alterados.
+
+## TASK-BE-008 — recorrência de tarefas
+
+21 testes isolados em tests/recurrence/recurrence.test.ts, com relógio controlado:
+diária/semanal/mensal/customizada, intervalos/count/término, clamp 29/30/31,
+bissexto/exceção secular, DST/fusos sem horário, limites/validação, paginação,
+próxima data no fuso, conclusão individual/idempotência/log, versões/histórico,
+suspensão/retomada/fim, arquivo, ownership/auth/CSRF e bloqueio com Prisma mockado.
+Não comprovam persistência ou concorrência real em PostgreSQL.
+
+Suite completa: 259 testes aprovados em 17 arquivos; lint/typecheck e build dry-run
+aprovados com XDG_CONFIG_HOME=/workspace/.config, WRANGLER_SEND_METRICS=false.
+`test:integration`: 11 skipped em 6 arquivos por falta das URLs de desenvolvimento.
+Os 2 novos testes reais em recurrence.integration.ts cobrem persistência versionada,
+estados esparsos, histórico, propriedade e conclusão concorrente por clients distintos
+com uma linha de estado e um evento. Sem mocks ou migrations automáticas; cleanup
+somente dos dados sintéticos próprios. Constraints/concorrência real e Neon seguem
+pendentes. Nenhuma migration aplicada, deploy ou merge executado.
+Prisma Client gerado pelas APIs oficiais 7.10.1 conforme procedimento já documentado,
+sem editar gerados, alterar lockfile/dependências ou desativar TLS/checksum.
