@@ -111,3 +111,21 @@ exige a URL de um Worker de desenvolvimento previamente autorizado e publicado.
 As rotas de echo e falha controlada ficam fora da entrada principal da aplicação.
 A validação remota permanece bloqueada por configuração/permissões documentadas;
 os testes locais não concluem o aceite remoto.
+
+## Prisma + Neon local (F0-07 / F0-08)
+
+A [configuração Prisma/Neon](docs/PRISMA-NEON-LOCAL.md) descreve a branch Neon de
+desenvolvimento, URLs pooled/direta, migrations e testes. Prisma Client é gerado
+pelo postinstall (`npm ci`) e `npm run prisma:generate`. A aplicação injeta serviços
+com conexão sob demanda; `/health` não depende do banco. Não há endpoints de
+persistência públicos nem tabelas de negócio nesta etapa.
+
+Configure `.env` para o CLI (`DATABASE_URL`, `DIRECT_URL`, `MAI_DATABASE_ENV`) e
+`.dev.vars` para o Wrangler (`DATABASE_URL`), sempre com credenciais de desenvolvimento.
+`npm run prisma:migrate:apply` aplica somente a migration técnica no banco de
+desenvolvimento após o guard. `npm run test:integration` testa Neon via workerd
+local; sem URLs, os casos são explicitamente skipped. Não há migrations automáticas.
+
+A conexão Neon real e a validação Prisma no Cloudflare remoto continuam pendentes.
+Nesta instância há ainda um bloqueio do CDN do CLI Prisma; consulte no roteiro
+as evidências, a geração usada para validar o código e a configuração de rede necessária.
