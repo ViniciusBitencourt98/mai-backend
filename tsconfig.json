@@ -21,6 +21,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "vitest*.config.ts",
-    "prisma.config.ts"
+    "prisma.config.ts",
+    "scripts/**/*.ts"
   ]
 }

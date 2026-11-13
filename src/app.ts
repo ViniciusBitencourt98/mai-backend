@@ -3,6 +3,7 @@ import { cors } from './middlewares/cors';
 import { errorHandler, notFound } from './middlewares/error-handler';
 import { requestId } from './middlewares/request-id';
 import type { ApplicationServices } from './services/container';
+import { createAuthRouter } from './routes/auth.routes';
 import { healthRouter } from './routes/health.routes';
 
 interface AppOptions {
@@ -16,9 +17,10 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.disable('x-powered-by');
   app.locals.services = options.services;
   app.use(requestId);
-  app.use(cors(allowedOrigins, options.corsMethods));
+  app.use(cors([allowedOrigins, ...(options.services?.auth.settings.trustedOrigins ?? [])].join(','), options.corsMethods));
   app.use(express.json({ limit: '100kb' }));
   app.use(healthRouter);
+  app.use('/auth', createAuthRouter(options.services?.auth));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);
