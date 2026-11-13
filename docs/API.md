@@ -80,3 +80,41 @@ usuário inexistente usam o mesmo 401 `INVALID_CREDENTIALS`. Entradas inválidas
 400; mídia não JSON no login: 415; limite de tentativas: 429 e `Retry-After`.
 Não há cadastro público. Ver [ADR-001](ADR-001-AUTHENTICATION.md) para cookies,
 CSRF, limites e criação da primeira usuária de desenvolvimento.
+
+## Projetos implementados — TASK-BE-004 (F2-01/F2-02)
+
+O contrato implementado usa `/projects`, conforme o ticket, sem prefixo `/api/v1`.
+O catálogo acima permanece uma proposta para os outros módulos. Não há DELETE.
+
+- `GET /projects`: `{items: Project[], page: {number, limit, hasMore}}`.
+  Paginação offset com `page=1`, `limit=20` (máximo 100), `page` máximo 1.000.000.
+  `q` pesquisa nome sem distinguir maiúsculas; `status=ACTIVE|ARCHIVED`;
+  `sort=name|createdAt|updatedAt` (padrão updatedAt), `order=asc|desc` (padrão desc).
+  Desempate sempre por UUID ascendente. Alterações concorrentes podem deslocar páginas.
+  `includeArchived=false` por padrão; para buscar arquivados envie
+  `includeArchived=true&status=ARCHIVED`. Filtros se combinam por AND.
+- `GET /projects/:id`: retorna Project, inclusive arquivado.
+- `POST /projects`: nome obrigatório (trim, 1–200 caracteres), descrição opcional
+  até 10.000, cor `#RRGGBB`, datas civis opcionais `startDate` e `dueDate`,
+  status opcional (padrão ACTIVE). Retorna 201 e `Location: /projects/{id}`.
+- `PATCH /projects/:id`: ao menos um campo editável; ausência preserva, `null`
+  limpa descrição/cor/datas. Nome/status não aceitam null. O par de datas final
+  deve satisfazer `dueDate >= startDate`. Status também sincroniza archivedAt.
+- `POST /projects/:id/archive` e `/restore`: sem corpo ou `{}`; idempotentes.
+  Arquivar preserva a data do primeiro arquivamento; restaurar limpa archivedAt.
+
+Todos exigem sessão e usam `Cache-Control: no-store`. Mutações exigem Origin
+confiável e X-CSRF-Token de login/me, inclusive PATCH. CORS permite credenciais e
+PATCH nessas rotas. `ownerId` vem somente da sessão; campos desconhecidos são
+rejeitados. Projeto externo e UUID inexistente retornam o mesmo 404 NOT_FOUND.
+401 significa sessão inválida/ausente; 403 indica CORS/CSRF; 400 indica validação,
+UUID, JSON ou query inválida; POST/PATCH JSON exigem application/json (415).
+O envelope de erro mantém `details: []`; não reflete valores enviados.
+Os schemas, formatos e exemplos completos estão em [openapi.json](openapi.json).
+
+Exemplo de criação (cookie e CSRF obtidos via autenticação):
+```json
+{"name":"Documentário MAI","color":"#00AAFF","startDate":"2026-11-13","dueDate":"2026-12-01"}
+```
+Projetos não criam nem tornam obrigatórios vínculos em tarefas/eventos/notas/
+decupagens. Esses módulos e a listagem de associados permanecem tickets próprios.

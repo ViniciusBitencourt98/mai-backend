@@ -1,3 +1,4 @@
+import { createProjectRouter } from './routes/project.routes';
 import express, { type Router } from 'express';
 import { cors } from './middlewares/cors';
 import { errorHandler, notFound } from './middlewares/error-handler';
@@ -21,6 +22,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(express.json({ limit: '100kb' }));
   app.use(healthRouter);
   app.use('/auth', createAuthRouter(options.services?.auth));
+  app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);

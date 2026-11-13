@@ -313,6 +313,1245 @@
           }
         }
       }
+    },
+    "/projects": {
+      "get": {
+        "summary": "Listar projetos próprios",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Página baseada em 1; offset limitado a 1.000.000 páginas."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Máximo de itens; hasMore indica outra página."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Pesquisa case-insensitive por nome, com trim."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "description": "ACTIVE: archivedAt=null; ARCHIVED: archivedAt preenchido. PATCH status equivale a archive/restore."
+            },
+            "description": "Filtro exato. Para ARCHIVED também envie includeArchived=true."
+          },
+          {
+            "name": "includeArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "false restringe a ACTIVE; true permite ambos os estados."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "updatedAt"
+            },
+            "description": "Desempate por id ascendente; paginação não é snapshot."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Direção da ordenação primária."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "00000000-0000-4000-8000-000000000010",
+                      "ownerId": "00000000-0000-4000-8000-000000000001",
+                      "name": "Documentário MAI",
+                      "description": null,
+                      "status": "ACTIVE",
+                      "color": "#00AAFF",
+                      "startDate": "2026-11-13",
+                      "dueDate": null,
+                      "createdAt": "2026-11-13T12:00:00.000Z",
+                      "updatedAt": "2026-11-13T12:00:00.000Z",
+                      "archivedAt": null
+                    }
+                  ],
+                  "page": {
+                    "number": 1,
+                    "limit": 20,
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "description": "Parâmetros desconhecidos, repetidos ou malformados retornam 400. Exemplo: /projects?page=1&limit=20&q=MAI&sort=name&order=asc&includeArchived=true. Nunca retorna projetos de outra conta."
+      },
+      "post": {
+        "summary": "Criar projeto próprio",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Projeto criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "name": "Documentário MAI",
+                  "description": null,
+                  "status": "ACTIVE",
+                  "color": "#00AAFF",
+                  "startDate": "2026-11-13",
+                  "dueDate": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "/projects/{id}"
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProject"
+              },
+              "example": {
+                "name": "Documentário MAI",
+                "color": "#00AAFF",
+                "startDate": "2026-11-13"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "summary": "Consultar projeto próprio, inclusive arquivado",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "name": "Documentário MAI",
+                  "description": null,
+                  "status": "ACTIVE",
+                  "color": "#00AAFF",
+                  "startDate": "2026-11-13",
+                  "dueDate": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: projeto inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar projeto próprio",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "name": "Documentário MAI",
+                  "description": null,
+                  "status": "ACTIVE",
+                  "color": "#00AAFF",
+                  "startDate": "2026-11-13",
+                  "dueDate": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: projeto inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchProject"
+              },
+              "example": {
+                "description": null,
+                "dueDate": "2026-12-01"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}/archive": {
+      "post": {
+        "summary": "Arquivar projeto",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "name": "Documentário MAI",
+                  "description": null,
+                  "status": "ACTIVE",
+                  "color": "#00AAFF",
+                  "startDate": "2026-11-13",
+                  "dueDate": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: projeto inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "description": "Operação idempotente. Envie POST sem corpo ou com {}. Campos no corpo são rejeitados; não altera registros associados. Preserva archivedAt quando já arquivado.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}/restore": {
+      "post": {
+        "summary": "Restaurar projeto",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "name": "Documentário MAI",
+                  "description": null,
+                  "status": "ACTIVE",
+                  "color": "#00AAFF",
+                  "startDate": "2026-11-13",
+                  "dueDate": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, INVALID_JSON: campos, datas, UUID ou query inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: projeto inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "description": "Operação idempotente. Envie POST sem corpo ou com {}. Campos no corpo são rejeitados; não altera registros associados. Define status=ACTIVE e archivedAt=null.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -428,6 +1667,234 @@
             "type": "string",
             "pattern": "^[a-f0-9]{64}$",
             "description": "Enviar em X-CSRF-Token nos POSTs autenticados; não é o token de sessão"
+          }
+        }
+      },
+      "CreateProject": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Nome com trim; não aceita somente espaços."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "description": "ACTIVE: archivedAt=null; ARCHIVED: archivedAt preenchido. PATCH status equivale a archive/restore.",
+            "default": "ACTIVE"
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Data civil YYYY-MM-DD, maior ou igual a startDate quando ambas existem."
+          }
+        }
+      },
+      "PatchProject": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Nome com trim; não aceita somente espaços."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "description": "ACTIVE: archivedAt=null; ARCHIVED: archivedAt preenchido. PATCH status equivale a archive/restore."
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Data civil YYYY-MM-DD, maior ou igual a startDate quando ambas existem."
+          }
+        },
+        "description": "Ausência preserva valor; null limpa description, color, startDate e dueDate. Datas validadas após mesclar com o registro."
+      },
+      "Project": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ownerId",
+          "name",
+          "description",
+          "status",
+          "color",
+          "startDate",
+          "dueDate",
+          "createdAt",
+          "updatedAt",
+          "archivedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Nome com trim; não aceita somente espaços."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "description": "ACTIVE: archivedAt=null; ARCHIVED: archivedAt preenchido. PATCH status equivale a archive/restore."
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Data civil YYYY-MM-DD, maior ou igual a startDate quando ambas existem."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
           }
         }
       }
