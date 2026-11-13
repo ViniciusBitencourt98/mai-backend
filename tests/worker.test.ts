@@ -51,3 +51,12 @@ describe('Express in the actual local Workers runtime', () => {
     });
   });
 });
+
+// The PoC routes must never be exposed by the application entrypoint.
+it.each(['/__validation/echo', '/__validation/error', '/__validation/async-error', '/__validation/http-error'])(
+  'keeps validation-only route out of the application: %s', async (path) => {
+    const response = await worker!.fetch(path, { method: path.endsWith('/echo') ? 'POST' : 'GET' });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ error: { code: 'NOT_FOUND' } });
+  },
+);

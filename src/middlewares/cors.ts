@@ -1,7 +1,10 @@
 import type { RequestHandler } from 'express';
 import { HttpError } from '../errors/http-error';
 
-export function cors(allowedOrigins: string): RequestHandler {
+export function cors(
+  allowedOrigins: string,
+  methods: readonly string[] = ['GET', 'HEAD', 'OPTIONS'],
+): RequestHandler {
   const origins = new Set(allowedOrigins.split(',').map((origin) => origin.trim()).filter(Boolean));
   for (const origin of origins) {
     const url = new URL(origin);
@@ -23,7 +26,7 @@ export function cors(allowedOrigins: string): RequestHandler {
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
     if (req.method === 'OPTIONS' && req.get('Access-Control-Request-Method')) {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', methods.join(', '));
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.status(204).end();
       return;
