@@ -156,3 +156,27 @@ e bloqueio impedem duplicatas concorrentes. Configuração+edição não duplica
 CHECKs SQL validam intervalos/count/version, ordem de datas e faixa de weekdays.
 Migration 20261113000700_task_recurrence versionada, não aplicada. Validar em banco
 de desenvolvimento; rollback removendo tabelas/enums perde histórico e exige backup.
+
+## Eventos — TASK-BE-009
+
+Event/events guarda instantes start_at/end_at TIMESTAMPTZ(3), timezone IANA, título,
+descrição/local opcionais, proprietário, projeto opcional e auditoria/arquivo.
+Índices owner_id/start_at/end_at, owner_id/end_at e owner_id/project_id. FK composta
+projeto/proprietário com RESTRICT impede vínculo externo, sem exclusão em cascata
+de projetos. CHECK de término posterior e duração máxima de 2.678.400 segundos.
+
+EventRecurrence/event_recurrences reutiliza os enums de frequência/estado e o
+gerador civil de tarefas. Versões UNIQUE(event_id,version), start_date/end_date,
+weekdays/count/timezone e instantes anchor_start_at/anchor_end_at congelam a hora
+local e duração de cada versão. Versão maior é a atual, até 100. EventException/
+event_exceptions tem PK(rule_id,date original), snapshot de título/descrição/local,
+instantes finais, cancelled e updated_at. Índice rule_id/start_at/end_at; datas
+não são materializadas salvo edição/cancelamento/restauração. CHECK de duração em
+regra/exceção e de calendário/limites como em tarefas.
+
+Reads RepeatableRead; mutações bloqueiam Event por owner_id e persistem metadados,
+regra ou upsert de exceção na mesma transação. Leituras limitadas a 100 versões e
+10.000 exceções da selecionada. Relações em cascata apenas do evento para regras e
+destas para exceções (nenhum endpoint exclui evento). Migration
+20261113000800_events versionada, não aplicada; validar em desenvolvimento antes
+de produção. Rollback perde eventos/exceções e exige backup/decisão.

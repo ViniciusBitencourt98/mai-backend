@@ -108,3 +108,24 @@ somente dos dados sintéticos próprios. Constraints/concorrência real e Neon s
 pendentes. Nenhuma migration aplicada, deploy ou merge executado.
 Prisma Client gerado pelas APIs oficiais 7.10.1 conforme procedimento já documentado,
 sem editar gerados, alterar lockfile/dependências ou desativar TLS/checksum.
+
+## TASK-BE-009 — eventos e recorrência
+
+22 testes isolados em tests/events/events.test.ts, datas e relógio determinísticos:
+DTOs/intervalos, projeto opcional/externo, CRUD/arquivo, pesquisa/paginação e overlap
+incluindo atravessar limites; quatro frequências pelo calendário compartilhado;
+DST gap/fold (incluindo Lord Howe), clamp bissexto, edição/movimento/cancelamento/
+restauração individual, idempotência, versões/suspensão/fim e auth/CSRF/ownership
+nos 16 endpoints. Mock Prisma verifica overlap, limite e bloqueio antes de ler
+séries; isso não comprova PostgreSQL real.
+
+Suíte completa: 281 testes aprovados em 18 arquivos, lint/typecheck/build dry-run
+aprovados (XDG_CONFIG_HOME=/workspace/.config, WRANGLER_SEND_METRICS=false).
+`test:integration`: 13 skipped em 7 arquivos sem URLs Neon de desenvolvimento.
+Os 2 novos testes reais em events.integration.ts cobrem instantes UTC, overlap,
+FK/CHECK, séries/exceções e cancelamento concorrente com uma única linha. Sem mocks
+nesses testes, sem migrations automáticas, cleanup apenas de dados sintéticos próprios.
+Constraints/concorrência real e Neon permanecem pendentes; nenhuma migration,
+merge ou deploy realizado. Client gerado pelas APIs oficiais Prisma 7.10.1 conforme
+procedimento já documentado, sem editar gerados/desativar TLS/checksum. Dependências
+e lockfile inalterados.

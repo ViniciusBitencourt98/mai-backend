@@ -370,3 +370,94 @@ RECURRENCE_LIMIT; 413 limite de corpo; 415 JSON exigido em configuração/ediç�
 500 genérico. Queries desconhecidas/repetidas são rejeitadas. Transações bloqueiam
 o pai antes de ler regra/estado, serializando edição/completion/arquivo. Sem Cron,
 Queues, notificações, eventos ou calendário visual. OpenAPI contém todos os DTOs.
+
+## Eventos e séries — TASK-BE-009
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET/POST | `/events` | 200 página / 201 Event + Location |
+| GET/PATCH | `/events/:id` | 200 EventDetail / Event |
+| POST | `/events/:id/archive` e `/restore` | 200 Event |
+| GET/POST/PATCH | `/events/:id/recurrence` | 200 regra / 201 regra / 200 nova versão |
+| POST | `/events/:id/recurrence/suspend`, `/resume`, `/end` | 200 regra |
+| GET | `/events/:id/occurrences` | 200 página de ocorrências |
+| PATCH | `/events/:id/occurrences/:ruleId/:date` | 200 ocorrência alterada |
+| POST | `/events/:id/occurrences/:ruleId/:date/cancel` e `/restore` | 200 ocorrência |
+
+Event: id,title,description,startAt,endAt,timezone,location,projectId,ownerId,
+createdAt,updatedAt,archivedAt. GET individual adiciona recurrence atual ou null.
+POST exige title trim 1–200, startAt/endAt ISO 8601 com Z/offset e timezone IANA;
+description opcional/null até 50.000, location opcional/null até 1.000 e projeto
+opcional próprio (inclusive arquivado). Instantes são normalizados UTC, precisão
+máxima de milissegundos, anos UTC 0001–9999. endAt > startAt, duração máxima
+31*24h. PATCH valida o par final; ausência preserva e null limpa opcionais.
+Sem exclusão definitiva, sem conversão automática de tarefas em eventos.
+
+GET /events usa page=1 (até 1.000.000), limit=20 (1–100), q substring literal de
+título case-insensitive/trim até 200, projectId, from/to instantes opcionais,
+sort=startAt|endAt|createdAt|updatedAt, order=asc|desc (padrão startAt asc, id asc
+no desempate), includeArchived=false. Campos desconhecidos/repetidos rejeitados.
+Janela semiaberta [from,to): endAt > from e startAt < to. Inclui eventos que começam
+antes e terminam dentro ou atravessam ambos os limites; não inclui os que terminam
+exatamente em from ou começam exatamente em to. Ambos preenchidos exigem to>from.
+Projeto externo/inexistente resulta em lista vazia. Listagem considera o registro
+**mestre/semente**, não expande séries nem mistura tarefas; use occurrences por
+série para datas virtuais. Offset não é snapshot concorrente.
+
+Crie um evento mestre e configure recurrence com o mesmo DTO das tarefas:
+frequency DAILY/WEEKLY/MONTHLY/CUSTOM_DAYS, interval 1–365, startDate civil,
+weekdays ISO (segunda=1, só WEEKLY exige lista não vazia), endDate inclusiva opcional,
+count opcional até 10.000, timezone IANA. O horário local de anchorStartAt (copiado
+do início do mestre) é repetido no timezone da regra; duração é anchorEndAt menos
+anchorStartAt em milissegundos, mantida fixa (o horário local de término pode mudar
+quando uma ocorrência atravessa DST). startDate pode ser independente da data da
+semente; ela define a primeira data elegível, não cria um segundo evento mestre.
+Mensal preserva a política clamp da TASK-BE-008 (31/jan → 28/fev → 31/mar).
+Semanal usa semanas ISO de segunda. Não há geração antecipada de registros.
+
+DST: horário local inexistente é omitido; em horário duplicado escolhe-se o primeiro
+instante. Omitidos ainda consomem slots de count do calendário civil, não geram
+reposições. Suporta mudanças de 30 minutos (ex.: Lord Howe), sem presumir offsets
+inteiros em horas. Recorrência sem hora das tarefas permanece inalterada.
+
+PATCH recurrence cria novo UUID/versão, preserva estado PAUSED e não transfere
+exceções antigas. Além dos campos de regra, aceita anchorStartAt/anchorEndAt para
+mudar hora local/duração; timezone também editável. Com regra configurada, PATCH
+no mestre não altera startAt/endAt/timezone (409): use a regra para mudar os tempos
+da série. O mestre mantém sua semente original; GET regra mostra a âncora atual.
+Metadados title/description/location do mestre são herdados por ocorrências sem
+exceção; exceções materializadas preservam seu snapshot textual e temporal.
+Máximo 100 versões; versões anteriores são consultáveis somente para exceções
+salvas com ruleId e ficam somente leitura. ENDED é terminal, sem PATCH/resume.
+
+GET occurrences exige from/to instantes com to>from, janela até 366*24h, page/limit
+como a listagem e ruleId opcional (padrão atual). Retorna `{items:[{ruleId,date,title,
+description,location,startAt,endAt,cancelled,updatedAt}],page:{number,limit,hasMore},
+calculated}`. Ordena por startAt e data original asc. Usa overlap [from,to) após
+aplicar exceções: remove movidas para fora e inclui movidas para dentro mesmo que
+a data original esteja longe da janela. Canceladas continuam visíveis com flag
+cancelled=true. Sem regra retorna 404 (evento único consultável via GET mestre).
+Limites compartilhados: 10.000 slots, 100 anos de horizonte/ano 9999 e 100 versões.
+Duração máxima de 31 dias limita a busca retroativa de ocorrências que atravessam
+a janela. Leituras não gravam nada e a chave (ruleId,date original) é estável.
+
+PATCH ocorrência altera só title/description/location/startAt/endAt; mantém sua
+identidade original mesmo se mover para outra data. Valida o par final. Cancela/
+restaura com POST sem corpo ou {}, idempotente quanto ao booleano. Restaurar mantém
+edições anteriores, e editar não restaura automaticamente uma cancelada. Sem
+alterações nos irmãos, na regra ou na semente. Datas omitidas por gap DST são 404.
+
+Suspensão/encerramento/arquivo mantêm somente exceções já persistidas observáveis
+(calculated=false), sem calcular novos compromissos. Resume retoma calendário e
+âncora originais, sem materialização retroativa. Arquivar bloqueia mutações de
+regra/ocorrência (409); restauração do mestre não reativa PAUSED/ENDED. Archive/
+restore do mestre preservam exceções e aceitam sem corpo ou {}. Mutações do mestre
+metadados/arquivo e de séries/exceções compartilham bloqueio transacional do evento
+por proprietário, para validar estado atual antes de persistir. Falhas revertem tudo.
+
+Auth em todos os endpoints; Origin/CSRF em todas as mutações; CORS com credenciais,
+Cache-Control no-store. ownerId vem da sessão. 400 validação/JSON/janela, 401 sessão,
+403 CORS/CSRF, 404 recurso ausente ou externo indistinguível, 409 EVENT_CONFLICT ou
+EVENT_LIMIT, 413 >100 KiB, 415 mídia não JSON em POST/PATCH com payload, 500 genérico.
+Contrato detalhado e exemplos no OpenAPI. Sem notificações, sincronização Google,
+calendário visual, deploy ou alterações nos contratos de tarefas.
