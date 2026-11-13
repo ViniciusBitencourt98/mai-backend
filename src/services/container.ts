@@ -1,3 +1,5 @@
+import { createDecupageScope } from '../infra/database/decupage-scope';
+import type { DecupageDependencies } from './decupage.service';
 import { createNoteScope } from '../infra/database/note-scope';
 import type { NoteDependencies } from './note.service';
 import { createProjectScope } from '../infra/database/project-scope';
@@ -14,8 +16,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
     ...(clientAddress ? { clientAddress } : {}) };
   const projects: ProjectDependencies = { run: createProjectScope(bindings) };
   const notes: NoteDependencies = { run: createNoteScope(bindings) };
-  return { notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const decupages: DecupageDependencies = { run: createDecupageScope(bindings) };
+  return { decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes'> & { projects?: ProjectDependencies; notes?: NoteDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies };

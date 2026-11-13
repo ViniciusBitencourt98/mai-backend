@@ -163,3 +163,63 @@ nota/projeto externo ou inexistente; 400 validação/JSON inválido; 413 acima d
 Envelope padrão de erro com details vazio, sem refletir conteúdo privado.
 Schemas e exemplos completos em [OpenAPI](openapi.json). Sem vínculos com eventos
 ou implementação de outros módulos nesta tarefa.
+
+## Decupagens implementadas — TASK-BE-006
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET | `/decupages` | 200 `{items: Decupage[], page: {number,limit,hasMore}}` |
+| GET | `/decupages/:id` | 200 Decupage com `segments` em ordem |
+| POST | `/decupages` | 201 Decupage e Location |
+| PATCH | `/decupages/:id` | 200 Decupage |
+| POST | `/decupages/:id/archive` | 200 Decupage |
+| POST | `/decupages/:id/restore` | 200 Decupage |
+| POST | `/decupages/:id/segments` | 201 `{items: Segment[]}` |
+| PATCH | `/decupages/:id/segments/:segmentId` | 200 `{items: Segment[]}` |
+| DELETE | `/decupages/:id/segments/:segmentId` | 200 `{items: Segment[]}` |
+| PATCH | `/decupages/:id/segments/reorder` | 200 `{items: Segment[]}` |
+
+Criação mínima `{"title":"Entrevista"}`. description opcional/null (até 50.000),
+tags normalizadas como nas notas e projectId opcional/null. Só projetos próprios,
+inclusive arquivados. PATCH parcial; null limpa descrição/vínculo e [] limpa tags.
+Campos: id,title,description,tags,ownerId,projectId,createdAt,updatedAt,archivedAt.
+GET individual inclui segmentos; listagem e outras respostas de pai não incluem.
+Sem exclusão definitiva da decupagem. Arquivamento/restauração idempotentes
+(sem corpo ou {}), preservam segmentos e projeto. Segmentos podem ser editados
+mesmo em decupagens arquivadas.
+
+Listagem: page=1 (até 1.000.000), limit=20 (1–100), sort=createdAt|updatedAt,
+order=asc|desc (padrão updatedAt desc, desempate id asc), q até 200 (substring
+literal case-insensitive em título/descrição/descrições dos segmentos), tag exata
+normalizada, projectId UUID, withoutProject=true e includeArchived=true. Sem
+includeArchived, arquivadas são excluídas; projectId e withoutProject=true juntos
+retornam 400. Todos os filtros por AND; projeto externo/inexistente resulta em
+lista vazia. Parâmetros desconhecidos/repetidos são rejeitados. Offset não é snapshot.
+
+Segment tem id,decupageId,position,startMs,endMs,description,createdAt,updatedAt.
+Timecodes são offsets relativos à mídia em milissegundos inteiros 0–2.147.483.647
+(aproximadamente 24,85 dias), nunca datas/horas. startMs obrigatório e endMs
+opcional/null >= startMs; igualdade permitida. Sobreposição e ordem diferente
+da cronologia são permitidas. Descrição textual até 10.000, padrão vazio.
+POST `{"startMs":1000,"endMs":5000,"description":"Abertura"}` adiciona ao final.
+PATCH exige ao menos um campo editável; valida o par final, endMs=null limpa.
+position é gerenciada pelo servidor (0..n-1), sem lacunas após remoção.
+Reorder recebe `{"segmentIds":["uuid-b","uuid-a"]}`: permutação exata, sem
+IDs ausentes/duplicados/externos. [] somente se não houver segmentos. Retorna 400
+para conjunto inválido sem mudanças parciais. Cada operação retorna a lista inteira,
+limitada a 100 segmentos por decupagem (409 SEGMENT_LIMIT na tentativa de exceder).
+Alterações de segmentos atualizam updatedAt da decupagem.
+
+Todas as rotas exigem sessão; todas as mutações exigem Origin confiável e
+X-CSRF-Token; CORS habilita credenciais e DELETE. Decupagem/projeto/segmento de outro
+proprietário nunca são expostos; 404 indistinguível do inexistente. Outros erros:
+400 validação/JSON; 401 sessão; 403 CORS/CSRF; 413 >100 KiB; 415 POST/PATCH sem
+application/json; 500 interno. Envelope padrão com details vazio. Reordenação,
+adição, edição e remoção são transacionais, com bloqueio do pai por proprietário;
+falha reverte toda a operação. Concorrência que muda o conjunto exige recarregar a
+lista antes de repetir reorder. UUID de segmento deve pertencer à decupagem da URL.
+
+Não há Event no schema atual; eventId é rejeitado como campo desconhecido e será
+adicionado com FK/ownership em tarefa futura. Sem upload, player, análise automática
+ou armazenamento de vídeo. Texto deve ser renderizado como texto pelo frontend.
+Contrato completo e exemplos no OpenAPI.
