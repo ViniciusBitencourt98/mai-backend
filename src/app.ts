@@ -1,3 +1,4 @@
+import { createEventRouter } from './routes/event.routes';
 import { createRecurrenceRouter } from './routes/recurrence.routes';
 import { createTaskRouter } from './routes/task.routes';
 import { createDecupageRouter } from './routes/decupage.routes';
@@ -31,6 +32,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use('/decupages', createDecupageRouter(options.services?.auth, options.services?.decupages));
   app.use('/tasks', createRecurrenceRouter(options.services?.auth, options.services?.recurrence));
   app.use('/tasks', createTaskRouter(options.services?.auth, options.services?.tasks));
+  app.use('/events', createEventRouter(options.services?.auth, options.services?.events));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);

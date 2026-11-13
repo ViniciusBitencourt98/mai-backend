@@ -83,3 +83,23 @@ Limites: 366 dias por janela, 100 itens por página, 10.000 datas por regra e 10
 anos de horizonte, 100 versões por tarefa. Próxima data derivada, sem cron/filas.
 Ações antigas da tarefa principal não se propagam a ocorrências; conclusão de
 ocorrência só altera sua chave e log, preservando tarefa principal/subtarefas.
+
+## TASK-BE-009 — eventos com instantes e recorrência local (ADR-003)
+
+Reutilizar schedule/validateRule e os DTOs IANA/calendário da TASK-BE-008; não mudar
+contratos de tarefas. Os enums existentes de nome TaskRecurrence* são reutilizados
+no Prisma para a mesma semântica, sem renomear tipos e causar migration incompatível.
+Eventos acrescentam resolução de relógio local via Intl: gap omitido, fold primeiro
+instante, duração fixa em milissegundos. A data original continua como identidade
+(ruleId,date) mesmo ao mover. Slots DST omitidos contam no count civil. Sem RRULE
+complexas e sem eventos all-day neste recorte; tarefas continuam civis sem horário.
+
+Versões congelam âncoras temporais, exceções congelam os valores efetivos do
+compromisso. PATCH regra cria nova série versionada; não transfere exceções.
+Metadados do mestre afetam apenas datas sem exceção; tempos de série são editados
+pela regra, mantendo a semente do mestre. Listagem mestre e expansão por série são
+contratos distintos para um futuro calendário unificado. Overlap semiaberto após
+exceções inclui movimentos para dentro e retira os movimentos para fora da janela.
+Inativas/arquivo expõem somente exceções persistidas, como o histórico esparso das
+tarefas; ENDED terminal. Duração máxima 31 dias controla lookback/expansão. Essa
+restrição e as políticas de DST devem ser preservadas ou versionadas em revisão.

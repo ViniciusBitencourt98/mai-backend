@@ -183,3 +183,13 @@ estado/log de ocorrências, suspensão/retomada/fim, API e OpenAPI para revisão
 Sem RRULE complexa, eventos, notificações ou calendário visual. Integração Neon,
 constraints/concorrência reais e gates remotos continuam pendentes; não marcar
 etapas completas antes da revisão e validação autorizada.
+
+## Rastreabilidade TASK-BE-009
+
+Recorte backend F3-01/F3-06/F3-07/F3-09/F3-10/F3-12: Event, séries versionadas,
+exceções individuais, engine civil reutilizada com resolução de horário local,
+CRUD/filtros/overlap, auth/CSRF/ownership e OpenAPI preparados para revisão.
+Sem telas, calendário agregado, notificações ou sincronização externa. Vínculos de
+notas/decupagens a eventos são extensão futura fora deste ticket. Neon real,
+constraints/concorrência e gates remotos continuam pendentes, sem marcação de
+conclusão antes da revisão/validação autorizada.

@@ -8007,6 +8007,2770 @@
         },
         "description": "Somente versão atual ACTIVE e pai não arquivado. Data deve pertencer ao calendário (404). Materializa só estado daquela ocorrência; tarefa principal e outras datas não mudam. Complete repetido preserva completedAt e não duplica evento histórico; reopen limpa completedAt. Mudanças reais geram log transacional. Ocorrências futuras válidas podem ser concluídas. Versões antigas são somente leitura (409)."
       }
+    },
+    "/events": {
+      "get": {
+        "summary": "Listar eventos mestre, sem expandir séries",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Página baseada em 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Limite máximo 100."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Substring literal de título, case-insensitive, trim."
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Projeto externo/inexistente resulta em lista vazia."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+            },
+            "description": "Limite inferior inclusivo, usa endAt > from."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Posterior a startAt; duração máxima 31*24 horas."
+            },
+            "description": "Limite superior exclusivo, usa startAt < to; se ambos, to > from."
+          },
+          {
+            "name": "includeArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "true inclui arquivados."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "startAt",
+                "endAt",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "startAt"
+            },
+            "description": "Desempate UUID ascendente."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "description": "Direção da ordenação."
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "00000000-0000-4000-8000-000000000050",
+                      "ownerId": "00000000-0000-4000-8000-000000000001",
+                      "title": "Entrevista",
+                      "description": null,
+                      "startAt": "2026-03-07T14:00:00.000Z",
+                      "endAt": "2026-03-07T15:00:00.000Z",
+                      "timezone": "America/New_York",
+                      "location": null,
+                      "projectId": null,
+                      "createdAt": "2026-03-01T12:00:00.000Z",
+                      "updatedAt": "2026-03-01T12:00:00.000Z",
+                      "archivedAt": null
+                    }
+                  ],
+                  "page": {
+                    "number": 1,
+                    "limit": 20,
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Intervalo semiaberto [from,to): endAt > from e startAt < to, incluindo eventos que atravessam limites. Filtros usam os instantes do registro mestre (semente), não datas virtuais recorrentes; consulte /events/{id}/occurrences para expandir série. Filtros por AND, offset não é snapshot."
+      },
+      "post": {
+        "summary": "Criar evento independente",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000050",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Entrevista",
+                  "description": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "timezone": "America/New_York",
+                  "location": null,
+                  "projectId": null,
+                  "createdAt": "2026-03-01T12:00:00.000Z",
+                  "updatedAt": "2026-03-01T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "/events/{id}"
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEvent"
+              },
+              "example": {
+                "title": "Entrevista",
+                "startAt": "2026-03-07T14:00:00.000Z",
+                "endAt": "2026-03-07T15:00:00.000Z",
+                "timezone": "America/New_York"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}": {
+      "get": {
+        "summary": "Consultar evento e regra atual",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetail"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000050",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Entrevista",
+                  "description": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "timezone": "America/New_York",
+                  "location": null,
+                  "projectId": null,
+                  "createdAt": "2026-03-01T12:00:00.000Z",
+                  "updatedAt": "2026-03-01T12:00:00.000Z",
+                  "archivedAt": null,
+                  "recurrence": {
+                    "id": "00000000-0000-4000-8000-000000000060",
+                    "version": 1,
+                    "state": "ACTIVE",
+                    "frequency": "DAILY",
+                    "interval": 1,
+                    "startDate": "2026-03-07",
+                    "weekdays": [],
+                    "endDate": null,
+                    "count": 3,
+                    "timezone": "America/New_York",
+                    "createdAt": "2026-11-13T12:00:00.000Z",
+                    "updatedAt": "2026-11-13T12:00:00.000Z",
+                    "eventId": "00000000-0000-4000-8000-000000000050",
+                    "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                    "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar evento mestre",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000050",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Entrevista",
+                  "description": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "timezone": "America/New_York",
+                  "location": null,
+                  "projectId": null,
+                  "createdAt": "2026-03-01T12:00:00.000Z",
+                  "updatedAt": "2026-03-01T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEvent"
+              },
+              "example": {
+                "location": "Estúdio"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}/archive": {
+      "post": {
+        "summary": "Arquivar evento",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000050",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Entrevista",
+                  "description": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "timezone": "America/New_York",
+                  "location": null,
+                  "projectId": null,
+                  "createdAt": "2026-03-01T12:00:00.000Z",
+                  "updatedAt": "2026-03-01T12:00:00.000Z",
+                  "archivedAt": "2026-03-01T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Idempotente quanto ao arquivo. Preserva regras/exceções; arquivado bloqueia mutações de séries/ocorrências e mostra apenas exceções salvas. Restaurar não reativa PAUSED/ENDED."
+      }
+    },
+    "/events/{id}/restore": {
+      "post": {
+        "summary": "Restaurar evento",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000050",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Entrevista",
+                  "description": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "timezone": "America/New_York",
+                  "location": null,
+                  "projectId": null,
+                  "createdAt": "2026-03-01T12:00:00.000Z",
+                  "updatedAt": "2026-03-01T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Idempotente quanto ao arquivo. Preserva regras/exceções; arquivado bloqueia mutações de séries/ocorrências e mostra apenas exceções salvas. Restaurar não reativa PAUSED/ENDED."
+      }
+    },
+    "/events/{id}/recurrence": {
+      "get": {
+        "summary": "Consultar regra atual",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000060",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Configurar série a partir da hora local/duração do mestre",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000060",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventRecurrence"
+              },
+              "example": {
+                "frequency": "DAILY",
+                "startDate": "2026-03-07",
+                "timezone": "America/New_York",
+                "count": 3
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar regra criando nova versão",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000061",
+                  "version": 2,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEventRecurrence"
+              },
+              "example": {
+                "anchorStartAt": "2026-03-07T15:00:00Z",
+                "anchorEndAt": "2026-03-07T16:00:00Z"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}/recurrence/suspend": {
+      "post": {
+        "summary": "Suspender série",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000060",
+                  "version": 1,
+                  "state": "PAUSED",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "PAUSED/ENDED preservam só exceções observáveis; resume retoma âncora/calendário original. ENDED terminal, sem edição/retomada. Repetições do mesmo estado permitidas."
+      }
+    },
+    "/events/{id}/recurrence/resume": {
+      "post": {
+        "summary": "Retomar série",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000060",
+                  "version": 1,
+                  "state": "ACTIVE",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "PAUSED/ENDED preservam só exceções observáveis; resume retoma âncora/calendário original. ENDED terminal, sem edição/retomada. Repetições do mesmo estado permitidas."
+      }
+    },
+    "/events/{id}/recurrence/end": {
+      "post": {
+        "summary": "Encerrar série",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecurrence"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000060",
+                  "version": 1,
+                  "state": "ENDED",
+                  "frequency": "DAILY",
+                  "interval": 1,
+                  "startDate": "2026-03-07",
+                  "weekdays": [],
+                  "endDate": null,
+                  "count": 3,
+                  "timezone": "America/New_York",
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "eventId": "00000000-0000-4000-8000-000000000050",
+                  "anchorStartAt": "2026-03-07T14:00:00.000Z",
+                  "anchorEndAt": "2026-03-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "PAUSED/ENDED preservam só exceções observáveis; resume retoma âncora/calendário original. ENDED terminal, sem edição/retomada. Repetições do mesmo estado permitidas."
+      }
+    },
+    "/events/{id}/occurrences": {
+      "get": {
+        "summary": "Expandir ocorrências e mesclar exceções em intervalo UTC",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+            },
+            "description": "Início inclusivo."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Posterior a startAt; duração máxima 31*24 horas."
+            },
+            "description": "Fim exclusivo > from, janela máxima 366 dias."
+          },
+          {
+            "name": "ruleId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Padrão versão atual; históricas somente exceções salvas."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Página baseada em 1; ordenação startAt e data original asc."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Máximo 100."
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOccurrencePage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "ruleId": "00000000-0000-4000-8000-000000000060",
+                      "date": "2026-03-07",
+                      "title": "Entrevista",
+                      "description": null,
+                      "location": null,
+                      "startAt": "2026-03-07T14:00:00.000Z",
+                      "endAt": "2026-03-07T15:00:00.000Z",
+                      "cancelled": false,
+                      "updatedAt": "2026-03-01T12:00:00.000Z"
+                    }
+                  ],
+                  "page": {
+                    "number": 1,
+                    "limit": 20,
+                    "hasMore": false
+                  },
+                  "calculated": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Janela [from,to), no máximo 366*24 horas. Overlap considera tempos finais após mover, incluindo exceções movidas para dentro e omitindo as movidas para fora. Retorna canceladas com cancelled=true. Datas inexistentes em DST omitidas, fold escolhe primeiro instante; count inclui slots omitidos. Mantém hora local e duração fixa em ms. Histórico/inativas/arquivadas: somente exceções persistidas, calculated=false. Sem regra retorna 404. Limites do calendário compartilhado: 10.000 slots, 100 anos/ano 9999 e 100 versões. Leitura não grava."
+      }
+    },
+    "/events/{id}/occurrences/{ruleId}/{date}": {
+      "patch": {
+        "summary": "Editar apenas uma ocorrência",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOccurrence"
+                },
+                "example": {
+                  "ruleId": "00000000-0000-4000-8000-000000000060",
+                  "date": "2026-03-07",
+                  "title": "Entrevista",
+                  "description": null,
+                  "location": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "cancelled": false,
+                  "updatedAt": "2026-03-01T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: use application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEventOccurrence"
+              },
+              "example": {
+                "startAt": "2026-03-08T16:00:00Z",
+                "endAt": "2026-03-08T17:00:00Z"
+              }
+            }
+          }
+        },
+        "description": "A chave ruleId/date original é estável mesmo ao mover. Merge com exceção anterior ou template atual, valida endAt > startAt e duração máxima de 31 dias. Só versão atual ACTIVE/pai não arquivado. Horário original inexistente em DST retorna 404. Editar não restaura automaticamente cancelada."
+      }
+    },
+    "/events/{id}/occurrences/{ruleId}/{date}/cancel": {
+      "post": {
+        "summary": "Cancelar ocorrência individual",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOccurrence"
+                },
+                "example": {
+                  "ruleId": "00000000-0000-4000-8000-000000000060",
+                  "date": "2026-03-07",
+                  "title": "Entrevista",
+                  "description": null,
+                  "location": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "cancelled": true,
+                  "updatedAt": "2026-03-01T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Só versão atual ACTIVE/pai não arquivado. Idempotente quanto a cancelled; restauração preserva alterações de título/local/tempo anteriores. Upsert pela chave única, sem afetar irmãos. Sem corpo ou {}."
+      }
+    },
+    "/events/{id}/occurrences/{ruleId}/{date}/restore": {
+      "post": {
+        "summary": "Restaurar ocorrência cancelada",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON; campos, datas, filtros, UUID ou ordem inválidos; detalhes não refletem dados privados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR; sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE; serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: evento, projeto, série ou ocorrência ausente/externo, resposta indistinguível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOccurrence"
+                },
+                "example": {
+                  "ruleId": "00000000-0000-4000-8000-000000000060",
+                  "date": "2026-03-07",
+                  "title": "Entrevista",
+                  "description": null,
+                  "location": null,
+                  "startAt": "2026-03-07T14:00:00.000Z",
+                  "endAt": "2026-03-07T15:00:00.000Z",
+                  "cancelled": false,
+                  "updatedAt": "2026-03-01T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EVENT_CONFLICT: pai arquivado, versão histórica, série inativa/encerrada, configuração existente ou alteração temporal do pai após configurar série. EVENT_LIMIT: 100 versões.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "description": "Só versão atual ACTIVE/pai não arquivado. Idempotente quanto a cancelled; restauração preserva alterações de título/local/tempo anteriores. Upsert pela chave única, sem afetar irmãos. Sem corpo ou {}."
+      }
     }
   },
   "components": {
@@ -9816,6 +12580,729 @@
           "calculated": {
             "type": "boolean",
             "description": "true = datas calculadas da regra atual ACTIVE e pai não arquivado; false = somente estados já persistidos."
+          }
+        }
+      },
+      "CreateEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "startAt",
+          "endAt",
+          "timezone"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "default": null
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; usado para exibição e hora local das repetições."
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000,
+            "default": null
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "default": null
+          }
+        }
+      },
+      "PatchEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; usado para exibição e hora local das repetições."
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "Ausência preserva, null limpa opcionais. Com recorrência configurada, startAt/endAt/timezone só podem mudar via PATCH recurrence; tentativa aqui retorna 409."
+      },
+      "Event": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ownerId",
+          "title",
+          "description",
+          "startAt",
+          "endAt",
+          "timezone",
+          "location",
+          "projectId",
+          "createdAt",
+          "updatedAt",
+          "archivedAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; usado para exibição e hora local das repetições."
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "EventRecurrence": {
+        "type": "object",
+        "required": [
+          "frequency",
+          "interval",
+          "startDate",
+          "weekdays",
+          "endDate",
+          "count",
+          "timezone",
+          "id",
+          "eventId",
+          "version",
+          "state",
+          "createdAt",
+          "updatedAt",
+          "anchorStartAt",
+          "anchorEndAt"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 1,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "default": [],
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "default": null,
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "default": null,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; mantém hora local da âncora nas repetições."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PAUSED",
+              "ENDED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "anchorStartAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "anchorEndAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          }
+        }
+      },
+      "PatchEventRecurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; mantém hora local da âncora nas repetições."
+          },
+          "anchorStartAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "anchorEndAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          }
+        },
+        "description": "Merge validado; cria novo UUID/versão, preservando exceções anteriores somente leitura. anchorStartAt/anchorEndAt mudam hora local e duração da série. PAUSED é preservado, ENDED não permite edição."
+      },
+      "EventDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ownerId",
+          "title",
+          "description",
+          "startAt",
+          "endAt",
+          "timezone",
+          "location",
+          "projectId",
+          "createdAt",
+          "updatedAt",
+          "archivedAt",
+          "recurrence"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; usado para exibição e hora local das repetições."
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventRecurrence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "EventPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "PatchEventOccurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          }
+        },
+        "description": "Altera só esta ocorrência; valida intervalo final após merge. Mantém data original na identidade, mesmo se mover para outro dia."
+      },
+      "EventOccurrence": {
+        "type": "object",
+        "required": [
+          "ruleId",
+          "date",
+          "title",
+          "description",
+          "location",
+          "startAt",
+          "endAt",
+          "cancelled",
+          "updatedAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não vazio."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 com Z ou offset, precisão máxima de milissegundos. Resposta normalizada UTC."
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a startAt; duração máxima 31*24 horas."
+          },
+          "ruleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Data civil original no calendário da série; não muda ao mover."
+          },
+          "cancelled": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Calculadas: maior timestamp do mestre e da versão. Exceções: timestamp da edição/cancelamento persistido."
+          }
+        }
+      },
+      "EventOccurrencePage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "calculated"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/EventOccurrence"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
+          },
+          "calculated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateEventRecurrence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "frequency",
+          "startDate",
+          "timezone"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "CUSTOM_DAYS"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 1,
+            "description": "Dias em DAILY/CUSTOM_DAYS, semanas em WEEKLY, meses em MONTHLY."
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "default": [],
+            "description": "ISO segunda=1, domingo=7; obrigatório e não vazio para WEEKLY, vazio para as demais."
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "default": null,
+            "description": "Inclusiva, >= startDate."
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000,
+            "default": null,
+            "description": "Máximo contado desde a primeira ocorrência da regra, não da janela. Sem count há limite operacional 10.000."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Fuso IANA, UTC aceito; mantém hora local da âncora nas repetições."
           }
         }
       }
