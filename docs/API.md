@@ -118,3 +118,48 @@ Exemplo de criação (cookie e CSRF obtidos via autenticação):
 ```
 Projetos não criam nem tornam obrigatórios vínculos em tarefas/eventos/notas/
 decupagens. Esses módulos e a listagem de associados permanecem tickets próprios.
+
+## Anotações implementadas — TASK-BE-005
+
+As rotas implementadas são `/notes` (sem `/api/v1`), sem DELETE.
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET | `/notes` | 200 `{items: Note[], page: {number, limit, hasMore}}` |
+| GET | `/notes/:id` | 200 Note, inclusive arquivada |
+| POST | `/notes` | 201 Note e `Location: /notes/{id}` |
+| PATCH | `/notes/:id` | 200 Note |
+| POST | `/notes/:id/archive` | 200 Note, arquivamento idempotente |
+| POST | `/notes/:id/restore` | 200 Note, archivedAt=null |
+
+Note contém id, title, content, tags, ownerId, projectId, createdAt, updatedAt e
+archivedAt. Timestamps UTC ISO 8601; projectId e archivedAt podem ser null.
+Criação mínima: `{"title":"Ideia para gravação"}`; content padrão `""`, tags `[]`,
+projectId null. Título trim 1–200, conteúdo texto simples até 50.000 caracteres
+(preservado literalmente; frontend deve renderizar como texto), no máximo 20 tags
+antes da deduplicação, cada uma trim/minúsculas com 1–50 caracteres. Sem catálogo
+ou renomeação global de tags. Só projectId aceita null nos inputs. PATCH exige ao
+menos um campo permitido; ausência preserva, tags substitui a lista inteira,
+`{"content":"","tags":[],"projectId":null}` limpa texto/tags/vínculo sem excluir nota.
+Archive/restore aceitam sem corpo ou `{}` e preservam conteúdo/vínculo/tags;
+arquivar novamente preserva archivedAt original. Nenhuma alteração em cascata ao
+arquivar projeto; é permitido associar projeto arquivado do mesmo proprietário.
+
+Filtros (todos combinados por AND): `q` substring literal do título sem distinguir
+maiúsculas (trim, máximo 200), `tag` uma tag exata normalizada, `projectId` UUID,
+`withoutProject=true` para notas sem vínculo. projectId e withoutProject=true
+juntos retornam 400. Projeto inexistente ou externo na listagem resulta em lista
+vazia, sem revelar existência. `includeArchived=false` por padrão, true inclui
+ambos; `page=1` (máximo 1.000.000), `limit=20` (1–100), `sort=updatedAt|createdAt`,
+`order=desc|asc`, desempate id ascendente. Offset não garante snapshot concorrente.
+Exemplo: `/notes?tag=filmagem&withoutProject=true&sort=createdAt&order=asc`.
+Queries desconhecidas, repetidas ou malformadas retornam 400.
+
+Sessão obrigatória em todos os endpoints; mutações exigem Origin confiável e
+X-CSRF-Token. CORS com credenciais/PATCH e Cache-Control no-store. ownerId vem
+somente da sessão. 401 sem sessão válida; 403 CORS/CSRF; 404 indistinguível para
+nota/projeto externo ou inexistente; 400 validação/JSON inválido; 413 acima de
+100 KiB; 415 para POST/PATCH sem application/json; 500 para falhas internas.
+Envelope padrão de erro com details vazio, sem refletir conteúdo privado.
+Schemas e exemplos completos em [OpenAPI](openapi.json). Sem vínculos com eventos
+ou implementação de outros módulos nesta tarefa.

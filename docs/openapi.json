@@ -1552,6 +1552,976 @@
           }
         }
       }
+    },
+    "/notes": {
+      "get": {
+        "summary": "Listar anotações próprias",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Página baseada em 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Limite máximo 100."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Substring literal do título sem distinguir maiúsculas, com trim."
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "description": "Uma tag exata, normalizada com trim/minúsculas."
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Somente notas próprias vinculadas a esse projeto; projeto inexistente/externo retorna lista vazia."
+          },
+          {
+            "name": "withoutProject",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Apenas notas sem projeto; incompatível com projectId (400)."
+          },
+          {
+            "name": "includeArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "true inclui arquivadas; false exclui."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "updatedAt"
+            },
+            "description": "Desempate por UUID ascendente."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Direção primária."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotePage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "00000000-0000-4000-8000-000000000010",
+                      "ownerId": "00000000-0000-4000-8000-000000000001",
+                      "title": "Ideia de gravação",
+                      "content": "Anotação livre, sem projeto obrigatório.",
+                      "tags": [
+                        "ideia",
+                        "filmagem"
+                      ],
+                      "projectId": null,
+                      "createdAt": "2026-11-13T12:00:00.000Z",
+                      "updatedAt": "2026-11-13T12:00:00.000Z",
+                      "archivedAt": null
+                    }
+                  ],
+                  "page": {
+                    "number": 1,
+                    "limit": 20,
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes. Filtros se combinam por AND. Queries desconhecidas/repetidas são rejeitadas. Paginação offset não é snapshot. Exemplo: /notes?tag=filmagem&withoutProject=true&limit=20&sort=createdAt&order=asc."
+      },
+      "post": {
+        "summary": "Criar anotação próprio",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Anotação criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Ideia de gravação",
+                  "content": "Anotação livre, sem projeto obrigatório.",
+                  "tags": [
+                    "ideia",
+                    "filmagem"
+                  ],
+                  "projectId": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "/notes/{id}"
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: nota ou projeto inexistente ou de outro proprietário. Nenhuma associação é realizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNote"
+              },
+              "example": {
+                "title": "Ideia de gravação",
+                "tags": [
+                  "filmagem"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes."
+      }
+    },
+    "/notes/{id}": {
+      "get": {
+        "summary": "Consultar anotação própria, inclusive arquivada",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Ideia de gravação",
+                  "content": "Anotação livre, sem projeto obrigatório.",
+                  "tags": [
+                    "ideia",
+                    "filmagem"
+                  ],
+                  "projectId": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: anotação inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes."
+      },
+      "patch": {
+        "summary": "Atualizar anotação próprio",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Ideia de gravação",
+                  "content": "Anotação livre, sem projeto obrigatório.",
+                  "tags": [
+                    "ideia",
+                    "filmagem"
+                  ],
+                  "projectId": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: nota ou projeto inexistente ou de outro proprietário. Nenhuma associação é realizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid project input",
+                    "details": []
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchNote"
+              },
+              "example": {
+                "content": "Texto atualizado",
+                "tags": [],
+                "projectId": null
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes."
+      }
+    },
+    "/notes/{id}/archive": {
+      "post": {
+        "summary": "Arquivar anotação",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Ideia de gravação",
+                  "content": "Anotação livre, sem projeto obrigatório.",
+                  "tags": [
+                    "ideia",
+                    "filmagem"
+                  ],
+                  "projectId": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: anotação inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes. Sem corpo ou {}. Repetição preserva archivedAt original.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/notes/{id}/restore": {
+      "post": {
+        "summary": "Restaurar anotação",
+        "tags": [
+          "Notes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000010",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Ideia de gravação",
+                  "content": "Anotação livre, sem projeto obrigatório.",
+                  "tags": [
+                    "ideia",
+                    "filmagem"
+                  ],
+                  "projectId": null,
+                  "createdAt": "2026-11-13T12:00:00.000Z",
+                  "updatedAt": "2026-11-13T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: anotação inexistente ou pertencente a outro usuário, resposta idêntica.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sessão obrigatória; alterações exigem Origin confiável e X-CSRF-Token. Arquivamento/restauração são idempotentes; não alteram o projeto. Projetos e notas externos são tratados como inexistentes. Sem corpo ou {}. Define archivedAt=null.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1872,6 +2842,196 @@
             "maxItems": 100,
             "items": {
               "$ref": "#/components/schemas/Project"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "CreateNote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não aceita somente espaços."
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 50000,
+            "description": "Texto simples, preservado literalmente. Não renderizar como HTML.",
+            "default": ""
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "description": "Trim e minúsculas, duplicatas removidas. PATCH substitui a lista inteira; [] remove todas.",
+            "default": []
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Opcional; null remove vínculo. Somente projetos do proprietário, inclusive arquivados.",
+            "default": null
+          }
+        }
+      },
+      "PatchNote": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não aceita somente espaços."
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 50000,
+            "description": "Texto simples, preservado literalmente. Não renderizar como HTML."
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "description": "Trim e minúsculas, duplicatas removidas. PATCH substitui a lista inteira; [] remove todas."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Opcional; null remove vínculo. Somente projetos do proprietário, inclusive arquivados."
+          }
+        },
+        "description": "Ausência preserva. Apenas projectId aceita null; content=\"\" limpa o texto, tags=[] limpa as tags."
+      },
+      "Note": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ownerId",
+          "title",
+          "content",
+          "tags",
+          "projectId",
+          "createdAt",
+          "updatedAt",
+          "archivedAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; não aceita somente espaços."
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 50000,
+            "description": "Texto simples, preservado literalmente. Não renderizar como HTML."
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "description": "Trim e minúsculas, duplicatas removidas. PATCH substitui a lista inteira; [] remove todas."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Opcional; null remove vínculo. Somente projetos do proprietário, inclusive arquivados."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "NotePage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/Note"
             }
           },
           "page": {

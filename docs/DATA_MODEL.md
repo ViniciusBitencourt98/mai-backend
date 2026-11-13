@@ -71,3 +71,21 @@ com os módulos futuros. Índices: (owner_id,status,updated_at), (owner_id,updat
 para a ordem das datas e a equivalência entre ARCHIVED e archived_at preenchido.
 Não foi aplicada a nenhum banco nesta tarefa. Remover a tabela/enum em rollback
 é destrutivo e requer backup/decisão explícita; não há rollback automático.
+
+## Anotações implementadas — TASK-BE-005
+
+`Note`/`notes`: UUID, title varchar(200), content TEXT não nulo padrão vazio, tags
+TEXT[] não nulo padrão vazio, owner_id UUID obrigatório, project_id UUID nullable,
+created_at/updated_at UTC e archived_at nullable. Índices por proprietário com
+arquivamento/atualização, criação, atualização e projeto; GIN(tags) para filtros
+exatos. Tags normalizadas pela aplicação (trim/minúsculas/únicas), sem tabela global.
+O array evita joins/catálogos para etiquetas livres de cada nota. Um catálogo com
+identidade, metadados ou renomeação global poderá justificar normalização futura.
+
+A FK composta (project_id,owner_id) referencia projects(id,owner_id), com índice
+único correspondente em projects. Impede vínculos entre proprietários mesmo em
+escritas fora do serviço e em corridas. project_id null mantém a nota independente.
+RESTRICT impede apagar projeto referenciado; futura exclusão deverá desvincular
+explicitamente, nunca apagar notas em cascata. Arquivar não modifica associações.
+A migration 20261113000400_notes não foi aplicada; validar em desenvolvimento antes
+de produção. Rollback com remoção da tabela perde notas e exige backup/decisão.

@@ -151,3 +151,11 @@ seis endpoints `/projects`, DTOs, serviço, repository, OpenAPI e testes isolado
 Integração Neon e aplicação da migration de desenvolvimento permanecem pendentes;
 nenhum gate remoto foi marcado como concluído. F2-03 e módulos associados fora
 do escopo deste ticket.
+
+## Rastreabilidade TASK-BE-005
+
+Recorte backend F2-04/F2-05/F2-06/F2-07: notas independentes, zero ou um projeto,
+tags, endpoints /notes, filtros, paginação, ownership e OpenAPI preparados para
+revisão. Busca implementada por título; vínculos com eventos, buscas mais amplas
+e telas continuam fora do ticket. Neon real/migration aplicada continuam pendentes;
+não marcar gates remotos nem tickets completos sem revisão.

@@ -1,3 +1,4 @@
+import { createNoteRouter } from './routes/note.routes';
 import { createProjectRouter } from './routes/project.routes';
 import express, { type Router } from 'express';
 import { cors } from './middlewares/cors';
@@ -23,6 +24,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(healthRouter);
   app.use('/auth', createAuthRouter(options.services?.auth));
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
+  app.use('/notes', createNoteRouter(options.services?.auth, options.services?.notes));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);

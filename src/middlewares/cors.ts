@@ -25,7 +25,7 @@ export function cors(
       return;
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
-    const projects = req.path === '/projects' || req.path.startsWith('/projects/');
+    const projects = ['/projects', '/notes'].some((path) => req.path === path || req.path.startsWith(path + '/'));
     const auth = req.path.startsWith('/auth/') || projects;
     if (auth) res.setHeader('Access-Control-Allow-Credentials', 'true');
     if (req.method === 'OPTIONS' && req.get('Access-Control-Request-Method')) {
