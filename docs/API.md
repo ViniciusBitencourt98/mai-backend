@@ -302,3 +302,71 @@ externos não vazam existência: 404 idêntico ao ausente. Outros erros: 400 val
 401 sessão, 403 CORS/CSRF, 409 transição/limite, 413 corpo >100 KiB, 415 mídia de
 POST/PATCH sem JSON, 500 falha interna. Envelope padrão, details vazio, sem refletir
 conteúdo privado. Schemas, exemplos e respostas no OpenAPI.
+
+## Recorrência de tarefas — TASK-BE-008
+
+| Método | Rota | Resposta |
+|---|---|---|
+| POST | `/tasks/:id/recurrence` | 201 regra configurada |
+| GET | `/tasks/:id/recurrence` | 200 regra atual + nextOccurrenceDate/taskArchived |
+| PATCH | `/tasks/:id/recurrence` | 200 nova versão da regra |
+| POST | `/tasks/:id/recurrence/suspend` | 200 regra PAUSED |
+| POST | `/tasks/:id/recurrence/resume` | 200 regra ACTIVE |
+| POST | `/tasks/:id/recurrence/end` | 200 regra ENDED |
+| GET | `/tasks/:id/occurrences` | 200 itens e cursor |
+| POST | `/tasks/:id/occurrences/:ruleId/:date/complete` | 200 estado individual |
+| POST | `/tasks/:id/occurrences/:ruleId/:date/reopen` | 200 estado individual |
+
+Crie uma tarefa com POST /tasks e configure a regra pelo POST acima. Não há cópias
+de tarefas nem criação antecipada de ocorrências. Exemplo de configuração:
+`{"frequency":"WEEKLY","startDate":"2026-11-01","interval":1,"weekdays":[1,5],"timezone":"America/Bahia","count":20}`.
+Obrigatórios: frequency/startDate/timezone IANA (UTC aceito). frequency:
+DAILY/WEEKLY/MONTHLY/CUSTOM_DAYS; interval inteiro 1–365, padrão 1, em dias/semanas/
+meses respectivamente. weekdays ISO segunda=1/domingo=7, únicos; não vazio só em
+WEEKLY, vazio nas demais. endDate opcional/null inclusiva >= startDate; count
+opcional/null 1–10.000, contado desde a primeira ocorrência (não da janela).
+PATCH parcial exige ao menos um campo; valida merge e cria nova versão/UUID,
+preservando histórico anterior. Campos ausentes preservados, count/endDate null
+removem limites. Mudar frequência pode exigir weekdays=[] no mesmo PATCH.
+Máximo 100 versões por tarefa; POST repetido retorna 409.
+
+Datas são civis YYYY-MM-DD, anos 0001–9999, sem horário específico. timezone
+define hoje para nextOccurrenceDate, sem converter datas em instantes artificiais.
+DST não cria horários inexistentes/ambíguos porque não há hora nesta versão.
+Semanal ancora semanas na segunda-feira da semana inicial e omite dias anteriores
+a startDate. Mensal ancora o dia original, reduz ao último dia dos meses curtos e
+restaura o dia original nos seguintes (31/jan → 28/fev → 31/mar; bissexto 29/fev).
+Limites operacionais mesmo sem término: até 10.000 ocorrências e horizonte de 100
+anos da âncora (sem ultrapassar ano 9999), sem geração infinita.
+
+GET occurrences exige from/to inclusivos (diferença máxima 365 dias, 366 datas),
+limit 1–100 (padrão 100), after opcional exclusivo dentro da janela e ruleId opcional
+(padrão atual). Retorno `{items:[{ruleId,date,completedAt}],page:{limit,nextAfter},
+calculated}`; envie nextAfter como after mantendo filtros. Datas em ordem crescente.
+Leituras não gravam nada. Somente versão atual ACTIVE e tarefa não arquivada
+calculam datas; demais casos retornam só estados já persistidos (calculated=false).
+Versões anteriores são consultáveis com ruleId e permanecem somente leitura.
+nextOccurrenceDate é a primeira data não concluída >= hoje no fuso da regra, ou
+null se exaurida/inativa/arquivada; não é persistida, para não ficar obsoleta.
+
+Complete/reopen materializam só a chave (ruleId,date), preservam tarefa/subtarefas
+e demais datas. Complete repetido preserva completedAt e não duplica histórico;
+reopen limpa e registra mudança real. Datas futuras válidas podem ser concluídas.
+O log de transições é persistido para auditoria, sem endpoint de log nesta tarefa.
+Suspensão não desloca âncora/count; resume retoma o calendário original (inclusive
+passado consultável), sem criar backfill no banco. ENDED é terminal, só end pode
+ser repetido; não permite PATCH/resume. Ações aceitam sem corpo ou {}.
+
+Arquivar a tarefa esconde cálculo/próxima ocorrência e bloqueia todas as mutações
+de recorrência/ocorrência (409), preservando regra/histórico. Restaurar a tarefa
+reabilita o estado anterior, sem reativar PAUSED/ENDED. Concluir/reabrir a tarefa
+principal pelo endpoint antigo não conclui/reabre ocorrências nem muda a regra;
+use os endpoints individuais para trabalho recorrente. Tarefas comuns não mudam.
+
+Sessão obrigatória, ownership verificado no pai; Origin/CSRF em mutações. 404
+indistinguível para tarefas/regras externas ou ausentes e datas fora do calendário;
+400 DTO/janela/cursor; 401 sessão; 403 CORS/CSRF; 409 RECURRENCE_CONFLICT ou
+RECURRENCE_LIMIT; 413 limite de corpo; 415 JSON exigido em configuração/edição;
+500 genérico. Queries desconhecidas/repetidas são rejeitadas. Transações bloqueiam
+o pai antes de ler regra/estado, serializando edição/completion/arquivo. Sem Cron,
+Queues, notificações, eventos ou calendário visual. OpenAPI contém todos os DTOs.

@@ -192,6 +192,7 @@ model Task {
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   project     Project?     @relation(fields: [projectId, ownerId], references: [id, ownerId], onDelete: Restrict, onUpdate: Restrict)
   subtasks    Subtask[]
+  recurrenceRules TaskRecurrence[]
 
   @@index([ownerId, status, dueDate])
   @@index([ownerId, priority])
@@ -215,4 +216,63 @@ model Subtask {
   // Deferred uniqueness is preserved in the SQL migration.
   @@index([taskId, position])
   @@map("subtasks")
+}
+
+
+enum TaskRecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM_DAYS
+}
+
+enum TaskRecurrenceState {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+model TaskRecurrence {
+  id        String @id @default(uuid()) @db.Uuid
+  taskId    String @map("task_id") @db.Uuid
+  version   Int
+  frequency TaskRecurrenceFrequency
+  interval  Int @default(1)
+  startDate DateTime @map("start_date") @db.Date
+  weekdays  Int[] @default([])
+  endDate   DateTime? @map("end_date") @db.Date
+  count     Int?
+  timezone  String @db.VarChar(100)
+  state     TaskRecurrenceState @default(ACTIVE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  occurrences TaskOccurrence[]
+
+  @@unique([taskId, version])
+  @@map("task_recurrences")
+}
+
+model TaskOccurrence {
+  ruleId String @map("rule_id") @db.Uuid
+  date DateTime @db.Date
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  rule TaskRecurrence @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  events TaskOccurrenceEvent[]
+
+  @@id([ruleId, date])
+  @@map("task_occurrences")
+}
+
+model TaskOccurrenceEvent {
+  id String @id @default(uuid()) @db.Uuid
+  ruleId String @map("rule_id") @db.Uuid
+  date DateTime @db.Date
+  completed Boolean
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  occurrence TaskOccurrence @relation(fields: [ruleId, date], references: [ruleId, date], onDelete: Cascade)
+
+  @@index([ruleId, date, createdAt])
+  @@map("task_occurrence_events")
 }

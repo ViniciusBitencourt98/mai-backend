@@ -134,3 +134,25 @@ falta de propriedade/ordem inválida reverte tudo. completed_at é UTC, datas de
 planejamento são civis; atraso usa a data local da preferência do usuário.
 Migration 20261113000600_tasks versionada e não aplicada; validar em desenvolvimento
 antes de produção. Rollback removendo tabelas/enums perde dados e exige backup.
+
+## Recorrência — TASK-BE-008
+
+TaskRecurrence/task_recurrences versiona regras por tarefa (UNIQUE task_id/version),
+com frequência, intervalo, start/end DATE, weekdays INT[], count opcional, timezone,
+state ACTIVE/PAUSED/ENDED e timestamps. A versão maior é a atual; PATCH cria novo ID,
+sem apagar regras antigas. Limite operacional 100 versões. FK para Task; exclusão
+em cascata apenas se uma operação administrativa futura apagar o pai.
+TaskOccurrence/task_occurrences tem PK composta (rule_id,date), completed_at e
+updated_at; materializa apenas ações individuais, não todas as datas possíveis.
+TaskOccurrenceEvent/task_occurrence_events registra transições reais de conclusão
+com UUID, completed e timestamp UTC, FK composta e índice rule_id/date/created_at.
+Reabertura preserva eventos anteriores; repetições idempotentes não criam eventos.
+Próxima ocorrência é derivada em tempo de leitura, nunca cache persistido obsoleto.
+
+Leitura usa snapshot RepeatableRead e queries limitadas a 100 versões/10.000 estados
+da versão selecionada. Mutações usam bloqueio do pai filtrado pelo proprietário,
+leem estado atual e persistem regra/ocorrência/log na mesma transação. Chave única
+e bloqueio impedem duplicatas concorrentes. Configuração+edição não duplicam Task.
+CHECKs SQL validam intervalos/count/version, ordem de datas e faixa de weekdays.
+Migration 20261113000700_task_recurrence versionada, não aplicada. Validar em banco
+de desenvolvimento; rollback removendo tabelas/enums perde histórico e exige backup.

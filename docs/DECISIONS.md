@@ -66,3 +66,20 @@ completedAt; reabrir limpa; subtarefas não bloqueiam nem herdam conclusão do p
 Sem hierarquia ilimitada: subtarefas de um nível, até 100, permutação completa para
 reorder. Projeto opcional próprio; sem recorrência/outbox/notificações nesse recorte.
 Essas decisões cobrem a parte de datas simples de F3-01; recorrência segue pendente.
+
+## TASK-BE-008 — recorrência sem horário (ADR-003, recorte de tarefas)
+
+Ocorrências são datas civis calculadas sob demanda; somente estado individual e
+log de conclusão são materializados. Identidade (ruleId,date) estável; edições
+criam nova versão/ID e não transferem estados antigos para o novo calendário.
+Histórico anterior permanece consultável, somente leitura. Suspensão/encerramento/
+arquivo mostram apenas estados registrados, sem novas datas calculadas; retomada
+preserva âncora e limites. ENDED terminal. Arquivo bloqueia mutações até restauração.
+Mensal usa clamp ao último dia do mês com retorno ao dia original; semanal usa
+semana ISO iniciada na segunda. Intervalos diários/customizados são aritmética de
+calendário, sem somar 24 horas a instantes no fuso. Timezone IANA define a data de
+hoje, preservando datas sem hora em DST. Horários locais/RRULE complexas são futuros.
+Limites: 366 dias por janela, 100 itens por página, 10.000 datas por regra e 100
+anos de horizonte, 100 versões por tarefa. Próxima data derivada, sem cron/filas.
+Ações antigas da tarefa principal não se propagam a ocorrências; conclusão de
+ocorrência só altera sua chave e log, preservando tarefa principal/subtarefas.
