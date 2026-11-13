@@ -93,6 +93,10 @@ retornam JSON 404, JSON inválido retorna 400, payload acima de 100 KiB retorna 
 e falhas inesperadas retornam 500 sem mensagem interna ou stack.
 O health check indica apenas que a API responde, sem verificar dependências externas.
 
+O [relatório e roteiro local da Fase 3](docs/F3-BACKEND-NEON-VALIDATION.md)
+descreve os checks Code First, testes Neon pendentes e a sequência para configurar
+Neon de desenvolvimento, aplicar migrations e iniciar backend/frontend futuramente.
+
 ### Limitações e próximos passos
 
 A validação deste ticket é local. O aceite remoto de F0-05 e a PoC de F0-06

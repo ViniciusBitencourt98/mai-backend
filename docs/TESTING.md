@@ -145,3 +145,22 @@ permanecem nas suítes BE-008/009 e são executados junto. Não são testes Post
 Suíte total: 298 testes em 19 arquivos. Neon: 13 testes externos skipped em 7 arquivos
 sem URLs de desenvolvimento. Nenhum teste simulado é apresentado como integração
 real. Lint/typecheck/test/build dry-run executados; sem migrations ou schema novo.
+
+## TASK-BE-011 — revisão Code First da Fase 3
+
+Por decisão explícita do mantenedor, nenhum acesso a banco ou migration nesta
+execução. Suíte local: 318 testes aprovados em 21 arquivos (20 novos), zero skips;
+lint/typecheck/build dry-run aprovados. Os 13 testes Neon em 7 arquivos permanecem
+skipped, com zero casos externos executados. Não se trata de aprovação integrada.
+
+Os novos testes de calendário compõem os serviços reais de recorrência com
+persistência isolada: exceções movidas, cancelamentos, conclusão individual,
+PAUSED/ENDED, versões, ownership, timezone/DST e paginação. Limites exatos de
+31 dias, 100 mestres por tipo e 10.000 itens também são verificados. A regressão
+de anos 0001/0099/0999 reproduziu a perda de zeros em localToday antes da correção.
+Mocks Prisma verificam propagação de falha dentro das transações de ocorrência,
+versão/exceção e reordenação; rollback PostgreSQL continua pendente.
+
+Inventário dos 13 testes, cobertura, diferenças de contrato, migrations revisadas
+e sequência de execução local em
+[F3-BACKEND-NEON-VALIDATION.md](F3-BACKEND-NEON-VALIDATION.md).
