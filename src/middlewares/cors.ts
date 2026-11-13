@@ -25,11 +25,11 @@ export function cors(
       return;
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
-    const projects = ['/projects', '/notes', '/decupages', '/tasks', '/events'].some((path) => req.path === path || req.path.startsWith(path + '/'));
+    const projects = ['/projects', '/notes', '/decupages', '/tasks', '/events', '/calendar'].some((path) => req.path === path || req.path.startsWith(path + '/'));
     const auth = req.path.startsWith('/auth/') || projects;
     if (auth) res.setHeader('Access-Control-Allow-Credentials', 'true');
     if (req.method === 'OPTIONS' && req.get('Access-Control-Request-Method')) {
-      res.setHeader('Access-Control-Allow-Methods', ['/decupages', '/tasks', '/events'].some((path) => req.path === path || req.path.startsWith(path + '/')) ? 'GET, HEAD, POST, PATCH, DELETE, OPTIONS' : projects ? 'GET, HEAD, POST, PATCH, OPTIONS' : auth ? 'GET, HEAD, POST, OPTIONS' : methods.join(', '));
+      res.setHeader('Access-Control-Allow-Methods', ['/decupages', '/tasks', '/events'].some((path) => req.path === path || req.path.startsWith(path + '/')) ? 'GET, HEAD, POST, PATCH, DELETE, OPTIONS' : req.path === '/calendar' || req.path.startsWith('/calendar/') ? 'GET, HEAD, OPTIONS' : projects ? 'GET, HEAD, POST, PATCH, OPTIONS' : auth ? 'GET, HEAD, POST, OPTIONS' : methods.join(', '));
       res.setHeader('Access-Control-Allow-Headers', auth ? 'Content-Type, X-CSRF-Token' : 'Content-Type');
       res.status(204).end();
       return;

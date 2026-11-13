@@ -1,3 +1,5 @@
+import { createCalendarScope } from '../infra/database/calendar-scope';
+import type { CalendarDependencies } from './calendar.service';
 import { createEventScope } from '../infra/database/event-scope';
 import type { EventDependencies } from './event.service';
 import { createRecurrenceScope } from '../infra/database/recurrence-scope';
@@ -26,8 +28,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const tasks: TaskDependencies = { run: createTaskScope(bindings) };
   const recurrence: RecurrenceDependencies = { run: createRecurrenceScope(bindings) };
   const events: EventDependencies = { run: createEventScope(bindings) };
-  return { events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const calendar:CalendarDependencies={run:createCalendarScope(bindings)};
+  return { calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };

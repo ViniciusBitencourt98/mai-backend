@@ -1,3 +1,4 @@
+import { createCalendarRouter } from './routes/calendar.routes';
 import { createEventRouter } from './routes/event.routes';
 import { createRecurrenceRouter } from './routes/recurrence.routes';
 import { createTaskRouter } from './routes/task.routes';
@@ -33,6 +34,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use('/tasks', createRecurrenceRouter(options.services?.auth, options.services?.recurrence));
   app.use('/tasks', createTaskRouter(options.services?.auth, options.services?.tasks));
   app.use('/events', createEventRouter(options.services?.auth, options.services?.events));
+  app.use('/calendar',createCalendarRouter(options.services?.auth,options.services?.calendar));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);

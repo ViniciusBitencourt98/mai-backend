@@ -10771,6 +10771,149 @@
         },
         "description": "Só versão atual ACTIVE/pai não arquivado. Idempotente quanto a cancelled; restauração preserva alterações de título/local/tempo anteriores. Upsert pela chave única, sem afetar irmãos. Sem corpo ou {}."
       }
+    },
+    "/calendar": {
+      "get": {
+        "summary": "Agregar tarefas e eventos do usuário",
+        "description": "Janela [from,to), até 31 dias. Tarefas sem hora usam date civil no timezone do item; concluídas incluídas, canceladas/arquivadas omitidas. Eventos sobrepostos e exceções movidas usam tempos finais; canceladas omitidas. Reutiliza BE-008/009; inativas apenas estados salvos. Máximo 100 mestres por tipo/10000 itens expandidos, excesso 409 sem truncar. Ordenação data/instante lexicográfica, type/id; paginação sem snapshot global. Ver docs/API.md para semântica integral.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TASK",
+                "EVENT",
+                "TASK,EVENT",
+                "EVENT,TASK"
+              ],
+              "default": "TASK,EVENT"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projeções agregadas, Cache-Control no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Query inválida/repetida/desconhecida, tipos ou janela inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão obrigatória.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CALENDAR_LIMIT: reduza tipos/janela ou use endpoints de domínio.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13303,6 +13446,199 @@
             "type": "string",
             "maxLength": 100,
             "description": "Fuso IANA, UTC aceito; mantém hora local da âncora nas repetições."
+          }
+        }
+      },
+      "CalendarTask": {
+        "type": "object",
+        "required": [
+          "id",
+          "masterId",
+          "title",
+          "href",
+          "timezone",
+          "ruleId",
+          "version",
+          "occurrenceDate",
+          "recurring",
+          "modified",
+          "type",
+          "date",
+          "completed"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "masterId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "ruleId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "occurrenceDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "recurring": {
+            "type": "boolean"
+          },
+          "modified": {
+            "type": "boolean"
+          },
+          "type": {
+            "const": "TASK"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CalendarEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "masterId",
+          "title",
+          "href",
+          "timezone",
+          "ruleId",
+          "version",
+          "occurrenceDate",
+          "recurring",
+          "modified",
+          "type",
+          "startAt",
+          "endAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "masterId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "ruleId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "occurrenceDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "recurring": {
+            "type": "boolean"
+          },
+          "modified": {
+            "type": "boolean"
+          },
+          "type": {
+            "const": "EVENT"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CalendarPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "timezone"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CalendarTask"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarEvent"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type"
+              }
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
+          },
+          "timezone": {
+            "type": "string"
           }
         }
       }

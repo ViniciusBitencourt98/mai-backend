@@ -132,3 +132,16 @@ e lockfile inalterados.
 
 A revisão de BE-009 adicionou regressão para updatedAt de ocorrências calculadas
 após editar o mestre; exceções salvas preservam seu próprio snapshot/timestamp.
+
+## TASK-BE-010 — calendário agregado
+
+16 testes isolados em tests/calendar/calendar.test.ts: query estrita, paginação,
+projeções pontuais/recorrentes, overlap no repository, modified/cancelled, timezone,
+combinação de tipos, vazios/séries inativas, ownership/auth HTTP, repetição de query,
+limites de mestres e expansão global. As expansões são dependências isoladas nos
+testes de agregação; testes de calendário civil/DST e exceções reais dos serviços
+permanecem nas suítes BE-008/009 e são executados junto. Não são testes PostgreSQL.
+
+Suíte total: 298 testes em 19 arquivos. Neon: 13 testes externos skipped em 7 arquivos
+sem URLs de desenvolvimento. Nenhum teste simulado é apresentado como integração
+real. Lint/typecheck/test/build dry-run executados; sem migrations ou schema novo.
