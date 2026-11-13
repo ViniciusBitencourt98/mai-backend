@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { createApp } from '../../src/app';
 import { HttpError } from '../../src/errors/http-error';
 
-// This entrypoint is exclusively for the disposable F0-06 development Worker.
+// This entrypoint is exclusively for the local F0-06 validation Worker.
 // Never import it from src/index.ts. Send synthetic, non-sensitive JSON only.
 const routes = Router();
 routes.post('/__validation/echo', (req, res) => {

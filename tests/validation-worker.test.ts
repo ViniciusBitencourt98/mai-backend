@@ -13,7 +13,7 @@ beforeAll(async () => {
   vi.stubEnv('WRANGLER_SEND_METRICS', 'false');
   const { unstable_dev } = await import('wrangler');
   worker = await unstable_dev('tests/fixtures/validation.worker.ts', {
-    config: 'wrangler.validation.jsonc', env: 'development',
+    config: 'wrangler.validation.jsonc',
     local: true, port: 0, inspectorPort: 0,
     persist: false, logLevel: 'error',
     experimental: { disableExperimentalWarning: true, disableDevRegistry: true },

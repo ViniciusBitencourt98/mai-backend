@@ -10,7 +10,7 @@ it('keeps the disposable validation Worker isolated and on the application compa
   expect(validation.compatibility_flags).toEqual(app.compatibility_flags);
   expect(validation.workers_dev).toBe(false);
   expect(validation.routes).toEqual([]);
-  expect(validation.env.development.name).toMatch(/-dev$/);
-  expect(validation.env.development.name).not.toBe(app.name);
-  expect(validation.env.development.routes).toEqual([]);
+  expect(validation.name).not.toBe(app.name);
+  expect(validation.preview_urls).toBe(false);
+  expect(validation).not.toHaveProperty('env');
 });

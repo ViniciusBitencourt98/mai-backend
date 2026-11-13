@@ -3,18 +3,13 @@
   "name": "mai-backend-f0-06-local",
   "main": "tests/fixtures/validation.worker.ts",
   "compatibility_date": "2026-11-12",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "workers_dev": false,
   "preview_urls": false,
   "routes": [],
-  "vars": { "CORS_ALLOWED_ORIGIN": "https://mai.example" },
-  "env": {
-    "development": {
-      "name": "mai-backend-f0-06-dev",
-      "workers_dev": true,
-      "preview_urls": false,
-      "routes": [],
-      "vars": { "CORS_ALLOWED_ORIGIN": "https://mai.example" }
-    }
+  "vars": {
+    "CORS_ALLOWED_ORIGIN": "https://mai.example"
   }
 }

@@ -102,12 +102,11 @@ O backlog permanece sem marcação de conclusão até revisão e validação rem
 A parte mínima de inicialização necessária à dependência F0-02 foi implementada
 neste backend independente; não foi criado monorepo nem frontend.
 
-## PoC de compatibilidade remota (F0-06)
+## Compatibilidade local Express/Workers (F0-06)
 
-O [roteiro F0-06](docs/F0-06-VALIDATION.md) descreve os pré-requisitos, a
-configuração separada de desenvolvimento e a suíte reutilizável de validação.
-`npm run build:validation` empacota a fixture sem deploy; `npm run test:remote`
-exige a URL de um Worker de desenvolvimento previamente autorizado e publicado.
-As rotas de echo e falha controlada ficam fora da entrada principal da aplicação.
-A validação remota permanece bloqueada por configuração/permissões documentadas;
-os testes locais não concluem o aceite remoto.
+O [roteiro F0-06](docs/F0-06-VALIDATION.md) documenta a execução com Wrangler,
+a matriz de testes, a compatibilidade Node e as limitações. `npm test` cobre a
+aplicação e uma fixture local isolada para parsing e falhas controladas.
+`npm run build:validation` empacota essa fixture sem upload.
+A validação remota do F0-06 continua pendente e será tratada em etapa posterior.
+Nenhuma credencial de hospedagem é necessária ou solicitada nesta tarefa.
