@@ -1,3 +1,6 @@
 # Comma-separated exact origins. This file contains no secrets.
 # Copy to .dev.vars to allow the local frontend explicitly.
 CORS_ALLOWED_ORIGIN="http://localhost:5173"
+# Opcional: colar somente a URL pooled da branch Neon de desenvolvimento.
+# DATABASE_URL="postgresql://USER:PASSWORD@ep-DEVELOPMENT-pooler.REGION.aws.neon.tech/DB?sslmode=require"
+# DIRECT_URL pertence ao CLI em .env, nunca é necessário no Worker.

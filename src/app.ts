@@ -2,9 +2,11 @@ import express, { type Router } from 'express';
 import { cors } from './middlewares/cors';
 import { errorHandler, notFound } from './middlewares/error-handler';
 import { requestId } from './middlewares/request-id';
+import type { ApplicationServices } from './services/container';
 import { healthRouter } from './routes/health.routes';
 
 interface AppOptions {
+  services?: ApplicationServices;
   additionalRoutes?: Router;
   corsMethods?: readonly string[];
 }
@@ -12,6 +14,7 @@ interface AppOptions {
 export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   const app = express();
   app.disable('x-powered-by');
+  app.locals.services = options.services;
   app.use(requestId);
   app.use(cors(allowedOrigins, options.corsMethods));
   app.use(express.json({ limit: '100kb' }));
