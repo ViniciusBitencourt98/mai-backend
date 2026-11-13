@@ -51,3 +51,35 @@ it('fails explicitly when expanded items exceed the global maximum',async()=>{
  app.eventOccurrences.mockResolvedValue({items:Array.from({length:101},(_,i)=>({date:'2026-03-'+String(i%20+1).padStart(2,'0'),title:'Many',startAt:'2026-03-08T12:00:00Z',endAt:'2026-03-08T13:00:00Z',cancelled:false})),page:{hasMore:false}});
  await expect(app.service.list('owner',{...q(),types:['EVENT']},'UTC')).rejects.toMatchObject({status:409,code:'CALENDAR_LIMIT'});
 });
+
+it('accepts exactly 31 days and rejects one extra millisecond',()=>{
+ const from='2026-01-01T00:00:00Z';
+ expect(calendarQueryDto.safeParse({from,to:'2026-02-01T00:00:00Z'}).success).toBe(true);
+ expect(calendarQueryDto.safeParse({from,to:'2026-02-01T00:00:00.001Z'}).success).toBe(false);
+});
+
+it.each(['TASK','EVENT'] as const)('accepts 100 %s masters and rejects 101',async(type)=>{
+ const rows=Array.from({length:100},(_,i)=>master(String(i)));
+ const app=setup(type==='TASK'?rows:[],type==='EVENT'?rows:[]);
+ expect((await app.service.list('owner',{...q(),types:[type],limit:100},'UTC')).items).toHaveLength(100);
+ rows.push(master('101'));
+ await expect(app.service.list('owner',{...q(),types:[type]},'UTC')).rejects.toMatchObject({status:409,code:'CALENDAR_LIMIT'});
+});
+
+it('accepts 10000 expanded items, paginates the final page and bounds mixed types',async()=>{
+ const app=setup([],Array.from({length:100},(_,i)=>master('e'+i,true)));
+ app.eventOccurrences.mockResolvedValue({items:Array.from({length:100},(_,i)=>({date:new Date(Date.UTC(2026,0,i+1)).toISOString().slice(0,10),title:'Many',startAt:'2026-03-08T12:00:00Z',endAt:'2026-03-08T13:00:00Z',cancelled:false})),page:{hasMore:false}});
+ const result=await app.service.list('owner',{...q(),types:['EVENT'],page:100,limit:100},'UTC');
+ expect(result.items).toHaveLength(100);expect(result.page.hasMore).toBe(false);
+ vi.mocked(app.repository.tasks).mockResolvedValue([master('one-off')]);
+ await expect(app.service.list('owner',q(),'UTC')).rejects.toMatchObject({status:409,code:'CALENDAR_LIMIT'});
+});
+
+it('counts cancelled expansion candidates toward the limit before hiding them',async()=>{
+ const app=setup([],Array.from({length:100},(_,i)=>master('e'+i,true)));
+ app.eventOccurrences.mockResolvedValue({items:Array.from({length:100},()=>({date:'2026-03-08',title:'Cancelled',startAt:'2026-03-08T12:00:00Z',endAt:'2026-03-08T13:00:00Z',cancelled:true})),page:{hasMore:false}});
+ expect((await app.service.list('owner',q(),'UTC')).items).toEqual([]);
+ let calls=0;
+ app.eventOccurrences.mockImplementation(async()=>({items:Array.from({length:100},()=>({date:'2026-03-08',title:'Cancelled',startAt:'2026-03-08T12:00:00Z',endAt:'2026-03-08T13:00:00Z',cancelled:true})),page:{hasMore:++calls===1}}));
+ await expect(app.service.list('owner',q(),'UTC')).rejects.toMatchObject({status:409,code:'CALENDAR_LIMIT'});
+});

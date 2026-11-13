@@ -200,3 +200,13 @@ GET /calendar agrega projeções de tarefas/eventos e ocorrências pela versão 
 com auth/ownership, janela/paginação/limites e reutilização dos serviços existentes.
 Sem persistência própria ou novo schema. Preparado para revisão; Neon real permanece
 pendente. F3-14/F3-15, publicações e demais módulos fora do escopo.
+
+## TASK-BE-011 — validação da Fase 3, recorte Code First
+
+Revisão de BE-007/008/009/010 e migrations existentes, 20 novos testes isolados
+e correção do formato de ano civil em localToday. Lint/typecheck, 318 testes
+locais e build dry-run aprovados. Não houve mudança de schema/contrato ou migration
+aplicada. Conforme decisão do mantenedor, Neon e runtime completo com banco não
+foram executados; 13 testes externos continuam skipped. Não marcar o gate integrado
+como concluído. Relatório e roteiro de execução futura em
+[F3-BACKEND-NEON-VALIDATION.md](F3-BACKEND-NEON-VALIDATION.md).
