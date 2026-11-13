@@ -101,3 +101,13 @@ Não há deploy de produção nesta entrega, nem scripts que o executem automati
 O backlog permanece sem marcação de conclusão até revisão e validação remota.
 A parte mínima de inicialização necessária à dependência F0-02 foi implementada
 neste backend independente; não foi criado monorepo nem frontend.
+
+## PoC de compatibilidade remota (F0-06)
+
+O [roteiro F0-06](docs/F0-06-VALIDATION.md) descreve os pré-requisitos, a
+configuração separada de desenvolvimento e a suíte reutilizável de validação.
+`npm run build:validation` empacota a fixture sem deploy; `npm run test:remote`
+exige a URL de um Worker de desenvolvimento previamente autorizado e publicado.
+As rotas de echo e falha controlada ficam fora da entrada principal da aplicação.
+A validação remota permanece bloqueada por configuração/permissões documentadas;
+os testes locais não concluem o aceite remoto.
