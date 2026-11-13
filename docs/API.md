@@ -223,3 +223,82 @@ Não há Event no schema atual; eventId é rejeitado como campo desconhecido e s
 adicionado com FK/ownership em tarefa futura. Sem upload, player, análise automática
 ou armazenamento de vídeo. Texto deve ser renderizado como texto pelo frontend.
 Contrato completo e exemplos no OpenAPI.
+
+## Tarefas e subtarefas — TASK-BE-007
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET | `/tasks` | 200 `{items: Task[], page: {number,limit,hasMore}}` |
+| POST | `/tasks` | 201 Task e Location |
+| GET | `/tasks/:id` | 200 Task com subtasks ordenadas |
+| PATCH | `/tasks/:id` | 200 Task |
+| POST | `/tasks/:id/complete` | 200 Task |
+| POST | `/tasks/:id/reopen` | 200 Task |
+| POST | `/tasks/:id/archive` | 200 Task |
+| POST | `/tasks/:id/restore` | 200 Task |
+| POST | `/tasks/:id/subtasks` | 201 `{items: Subtask[]}` |
+| PATCH | `/tasks/:id/subtasks/:subtaskId` | 200 `{items: Subtask[]}` |
+| POST | `/tasks/:id/subtasks/:subtaskId/complete` | 200 `{items: Subtask[]}` |
+| POST | `/tasks/:id/subtasks/:subtaskId/reopen` | 200 `{items: Subtask[]}` |
+| DELETE | `/tasks/:id/subtasks/:subtaskId` | 200 `{items: Subtask[]}` |
+| PATCH | `/tasks/:id/subtasks/reorder` | 200 `{items: Subtask[]}` |
+
+Task contém id,title,description,status,priority,startDate,dueDate,completedAt,
+projectId,ownerId,createdAt,updatedAt,archivedAt. Criação mínima `{"title":"Editar
+vídeo"}` (título trim 1–200, descrição opcional/null até 50.000). Defaults:
+PENDING, MEDIUM, datas/vínculo nulos. Projeto opcional deve ser próprio, inclusive
+arquivado. PATCH parcial, ao menos um campo; ausência preserva e null limpa
+description/startDate/dueDate/projectId. ownerId vem somente da sessão; completedAt
+e archivedAt não são editáveis. Campos desconhecidos são rejeitados.
+
+Status usam a convenção dos documentos: PENDING, IN_PROGRESS, COMPLETED, CANCELLED.
+PENDING/IN_PROGRESS podem mudar para qualquer um desses estados. COMPLETED e
+CANCELLED só podem permanecer iguais ou voltar a PENDING; outras mudanças retornam
+409 INVALID_TRANSITION (reabra antes). complete define COMPLETED; repetição preserva
+completedAt. Criar COMPLETED também registra o instante. Reopen define PENDING e
+limpa completedAt. Qualquer estado diferente de COMPLETED tem completedAt=null.
+Conclusão é independente do checklist; nunca conclui/reabre subtarefas em cascata.
+Prioridades: LOW < MEDIUM < HIGH < URGENT, padrão MEDIUM.
+
+startDate/dueDate são **datas civis** YYYY-MM-DD (anos 0001–9999), sem horário nem
+conversão de fuso; dueDate >= startDate quando ambas preenchidas, validado após o
+merge na transação. Timestamps de auditoria/conclusão são instantes UTC ISO 8601.
+Precisão de prazo com horário (dueAt) fica para extensão futura; não enviar datetime
+em dueDate. Não há recorrência, notificações, eventos ou calendário neste ticket.
+
+Listagem: page=1 (1–1.000.000), limit=20 (1–100), q substring literal case-insensitive
+do título (trim, até 200); status, priority, projectId; withoutProject=true;
+dueFrom/dueTo inclusivos, YYYY-MM-DD, intervalo ordenado; withoutDueDate=true;
+overdue=true; includeArchived=true. Filtros se combinam por AND; projeto externo ou
+inexistente resulta em lista vazia. withoutProject conflita com projectId;
+withoutDueDate conflita com dueFrom/dueTo/overdue=true: 400. Parâmetros desconhecidos,
+repetidos, inválidos ou intervalos invertidos retornam 400.
+
+Atrasada = PENDING/IN_PROGRESS com dueDate anterior ao dia de hoje no fuso das
+preferências do usuário autenticado (padrão America/Bahia). Sem prazo, concluídas,
+canceladas e vencendo hoje nunca contam como atrasadas. overdue=false não restringe
+por atraso. Arquivadas são excluídas por padrão; includeArchived permite incluí-las.
+Sort createdAt|updatedAt|priority|dueDate, order asc|desc, padrão updatedAt desc;
+desempate por id asc. Ordenação de prazo mantém null no final nas duas direções.
+Offset não é snapshot. Exemplo: `/tasks?overdue=true&priority=HIGH&sort=dueDate&order=asc`.
+
+Subtask contém id,taskId,title,completed,position,createdAt,updatedAt. POST exige
+title e aceita completed opcional (false). PATCH aceita title/completed (ao menos
+um). Complete/reopen definem o booleano, sem mudar status/completedAt do pai.
+Adição ao final; position gerenciada pelo servidor 0..n-1, no máximo 100 subtarefas
+(409 SUBTASK_LIMIT ao exceder). DELETE remove somente a selecionada, preservando as
+demais e compactando posições. Reorder `{"subtaskIds":["uuid-b","uuid-a"]}` exige
+permutação completa sem repetição/IDs externos; [] apenas se vazia. Falha não
+persiste mudanças parciais; adição/remoção concorrente pode exigir recarregar.
+Cada operação retorna a lista inteira ordenada; atualiza updatedAt do pai.
+Subtarefas podem ser editadas mesmo em tarefa concluída/arquivada.
+
+Complete/reopen/archive/restore e as ações equivalentes de subtarefa aceitam sem
+corpo ou {}. Arquivar preserva status/completedAt/subtarefas e archivedAt original
+em repetições; restaurar limpa archivedAt. Sem exclusão definitiva de tarefa.
+Sessão em todas as rotas; Origin confiável e X-CSRF-Token em todas as mutações.
+CORS com credenciais/DELETE; Cache-Control no-store. Projeto/tarefa/subtarefa
+externos não vazam existência: 404 idêntico ao ausente. Outros erros: 400 validação,
+401 sessão, 403 CORS/CSRF, 409 transição/limite, 413 corpo >100 KiB, 415 mídia de
+POST/PATCH sem JSON, 500 falha interna. Envelope padrão, details vazio, sem refletir
+conteúdo privado. Schemas, exemplos e respostas no OpenAPI.

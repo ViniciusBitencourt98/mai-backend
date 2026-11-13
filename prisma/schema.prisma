@@ -30,6 +30,7 @@ model User {
   preferences  UserPreferences?
   sessions     Session[]
   projects     Project[]
+  tasks        Task[]
   notes        Note[]
   decupages    Decupage[]
 
@@ -92,6 +93,7 @@ model Project {
   @@index([ownerId, updatedAt])
   @@index([ownerId, name])
   @@index([ownerId, createdAt])
+  tasks       Task[]
   notes       Note[]
   decupages   Decupage[]
   @@unique([id, ownerId])
@@ -156,4 +158,61 @@ model DecupageSegment {
   // Deferred uniqueness is defined in SQL to allow atomic position swaps.
   @@index([decupageId, position])
   @@map("decupage_segments")
+}
+
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String       @db.VarChar(200)
+  description String?
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  startDate   DateTime?    @map("start_date") @db.Date
+  dueDate     DateTime?    @map("due_date") @db.Date
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz(3)
+  ownerId     String       @map("owner_id") @db.Uuid
+  projectId   String?      @map("project_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  archivedAt  DateTime?    @map("archived_at") @db.Timestamptz(3)
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  project     Project?     @relation(fields: [projectId, ownerId], references: [id, ownerId], onDelete: Restrict, onUpdate: Restrict)
+  subtasks    Subtask[]
+
+  @@index([ownerId, status, dueDate])
+  @@index([ownerId, priority])
+  @@index([ownerId, dueDate])
+  @@index([ownerId, projectId])
+  @@index([ownerId, createdAt])
+  @@index([ownerId, updatedAt])
+  @@map("tasks")
+}
+
+model Subtask {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  title     String   @db.VarChar(200)
+  completed Boolean  @default(false)
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Deferred uniqueness is preserved in the SQL migration.
+  @@index([taskId, position])
+  @@map("subtasks")
 }

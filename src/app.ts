@@ -1,3 +1,4 @@
+import { createTaskRouter } from './routes/task.routes';
 import { createDecupageRouter } from './routes/decupage.routes';
 import { createNoteRouter } from './routes/note.routes';
 import { createProjectRouter } from './routes/project.routes';
@@ -27,6 +28,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
   app.use('/notes', createNoteRouter(options.services?.auth, options.services?.notes));
   app.use('/decupages', createDecupageRouter(options.services?.auth, options.services?.decupages));
+  app.use('/tasks', createTaskRouter(options.services?.auth, options.services?.tasks));
   if (options.additionalRoutes) app.use(options.additionalRoutes);
   app.use(notFound);
   app.use(errorHandler);
