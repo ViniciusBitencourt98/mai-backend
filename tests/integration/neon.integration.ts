@@ -36,7 +36,7 @@ describe.skipIf(!configured)('Neon development through local workerd — real Po
     } finally {
       await worker?.stop();
       vi.unstubAllEnvs();
-      if (configHome) await rm(configHome, { recursive: true, force: true });
+      if (configHome) await rm(configHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 

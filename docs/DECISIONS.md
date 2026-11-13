@@ -10,7 +10,7 @@
 - Exportação ICS é unidirecional, não sincronização Google Calendar.
 
 ## Decisões pendentes (bloqueiam tickets dependentes, não todo o projeto)
-- ADR-001: autenticação/sessão, proteção CSRF e contratos de identidade (F1-01).
+- ADR-001: proposta implementada para revisão no PR F1-01–F1-04: [sessões opacas, PBKDF2 e CSRF](ADR-001-AUTHENTICATION.md). A aprovação final cabe ao mantenedor.
 - ADR-002: cardinalidade dos vínculos entre notas, eventos e projetos (F2-04).
 - ADR-003: datas sem hora e regras de recorrência/exceções (F3-01).
 - ADR-004: statuses do calendário editorial (F4-01).

@@ -23,7 +23,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await worker?.stop();
   vi.unstubAllEnvs();
-  if (configHome) await rm(configHome, { recursive: true, force: true });
+  if (configHome) await rm(configHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 validationContract((path, init) => worker!.fetch(path, init));

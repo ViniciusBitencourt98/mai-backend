@@ -17,8 +17,8 @@
 |---|---|---|
 | GET | `/health` | Estado operacional básico |
 | GET/PATCH | `/api/v1/me` | Perfil e preferências |
-| POST | `/api/v1/auth/login` | Login (ajustar à solução auth escolhida) |
-| POST | `/api/v1/auth/logout` | Encerrar sessão |
+| POST | `/auth/login` | Login por e-mail/senha (implementado) |
+| POST | `/auth/logout` | Revogar sessão (implementado) |
 | GET/POST | `/api/v1/projects` | Listar/criar projetos |
 | GET/PATCH/DELETE | `/api/v1/projects/:id` | Consultar/editar/arquivar projeto |
 | GET/POST | `/api/v1/tasks` | Listar/criar tarefas |
@@ -55,3 +55,28 @@
 - `CreateDecoupageSegment`: `{position, startMs?, endMs?, description, observations?}`.
 
 As descrições acima são esboços sem validação integral. Cada feature deve formalizar contrato e exemplos em testes de schema.
+
+
+## Autenticação implementada — F1-01 a F1-04
+
+Os endpoints de autenticação desta entrega são **`/auth/*`**, conforme TASK-BE-003.
+As demais rotas `/api/v1` do catálogo continuam propostas. `GET /auth/me` consulta
+a sessão atual e não substitui silenciosamente o futuro endpoint de perfil editável.
+O contrato formal está em [openapi.json](openapi.json).
+
+- `POST /auth/login`: JSON estrito `{email, password}`. E-mail é normalizado
+  para minúsculas; senha não sofre normalização. Exige `Origin` explicitamente
+  confiável. Resposta 200 `{user: {id, email, name, preferences}, expiresAt, csrfToken}`
+  e cookie de sessão HttpOnly. Não retorna o token de sessão no JSON.
+- `GET /auth/me`: cookie válido obrigatório; 200 com o mesmo DTO público e
+  token CSRF da sessão. Sem cookie ou sessão válida, 401.
+- `POST /auth/logout`: exige cookie, Origin confiável e `X-CSRF-Token` recebido
+  no login/me. Revoga no banco e limpa o cookie com 204. Sessão ausente,
+  expirada ou revogada: 401; origem/token CSRF inválido: 403.
+
+Todos esses responses usam `Cache-Control: no-store`. Falhas seguem o envelope
+padronizado e não retornam senha, hash ou conteúdo interno. Login inválido e
+usuário inexistente usam o mesmo 401 `INVALID_CREDENTIALS`. Entradas inválidas:
+400; mídia não JSON no login: 415; limite de tentativas: 429 e `Retry-After`.
+Não há cadastro público. Ver [ADR-001](ADR-001-AUTHENTICATION.md) para cookies,
+CSRF, limites e criação da primeira usuária de desenvolvimento.

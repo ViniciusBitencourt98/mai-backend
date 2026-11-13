@@ -22,7 +22,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await worker?.stop();
   vi.unstubAllEnvs();
-  if (configHome) await rm(configHome, { recursive: true, force: true });
+  if (configHome) await rm(configHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 describe('Express in the actual local Workers runtime', () => {
@@ -60,3 +60,16 @@ it.each(['/__validation/echo', '/__validation/error', '/__validation/async-error
     expect(await response.json()).toMatchObject({ error: { code: 'NOT_FOUND' } });
   },
 );
+
+it('denies private access without querying a database when no cookie exists', async () => {
+  const response = await worker!.fetch('/auth/me');
+  expect(response.status).toBe(401);
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(await response.json()).toMatchObject({ error: { code: 'UNAUTHENTICATED' } });
+});
+it('validates the login DTO in workerd before database access', async () => {
+  const response = await worker!.fetch('/auth/login', { method: 'POST',
+    headers: { Origin: 'https://mai.example', 'Content-Type': 'application/json' }, body: '{"email":"invalid"}' });
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+});

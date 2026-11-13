@@ -17,6 +17,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
     : isBodyError('entity.too.large') ? new HttpError(413, 'PAYLOAD_TOO_LARGE', 'JSON body exceeds limit')
     : new HttpError(500, 'INTERNAL_ERROR', 'Internal server error');
 
+  if (httpError.code === 'LOGIN_RATE_LIMITED') res.setHeader('Retry-After', '900');
   res.status(httpError.status).json({
     error: { code: httpError.code, message: httpError.message, details: [] },
     requestId: res.locals.requestId as string,
