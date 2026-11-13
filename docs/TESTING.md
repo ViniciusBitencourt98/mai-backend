@@ -7,3 +7,26 @@
 - Cobertura e status de execução devem constar no PR. Testes que dependam de segredos ou serviços pagos não são mandatórios em PRs de fork; indicar testes manuais e ambientes.
 - Migrations: verificar diff, risco de dados e rollback antes de aplicar em produção.
 - Nunca usar credenciais reais em logs, fixtures ou reports.
+
+## TASK-BE-004 — projetos
+
+`tests/projects/projects.test.ts` contém 28 testes isolados (DTO, serviço, HTTP e
+predicados Prisma com persistência fake/mock). Não são testes de integração Neon.
+A suíte completa executou 133 testes com sucesso, incluindo workerd local.
+Lint e typecheck passaram. O build dry-run passou com
+`XDG_CONFIG_HOME=/workspace/.config WRANGLER_SEND_METRICS=false npm run build`;
+a configuração XDG evita escrita fora do workspace no ambiente Codex.
+Smoke Wrangler local: `/health` 200 e `/projects` sem sessão 401.
+
+`npm run test:integration` identificou 4 testes skipped em 2 arquivos: os 3 testes
+Neon existentes e o teste real de projetos. Não houve conexão PostgreSQL nem
+aplicação de migration. O novo teste real valida persistência por outro client,
+atualização, isolamento, arquivamento/restauração, filtros e paginação. Para rodar,
+configure as URLs de **desenvolvimento** e MAI_DATABASE_ENV conforme o roteiro
+Prisma/Neon, e aplique as migrations somente nesse banco autorizado. O teste cria
+e remove somente registros sintéticos com UUIDs próprios, sem migrations automáticas.
+
+Nesta execução `npm ci` encontrou 403 no checksum do CDN Prisma. O client foi
+regenerado pelas APIs oficiais com pacotes npm 7.10.1 conforme a alternativa já
+descrita em PRISMA-NEON-LOCAL.md, sem editar gerados ou desativar TLS/checksum.
+O CLI padrão e a execução real em Neon/remoto permanecem pendentes. Nenhum deploy.

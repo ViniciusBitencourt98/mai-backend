@@ -1,3 +1,5 @@
+import { createProjectScope } from '../infra/database/project-scope';
+import type { ProjectDependencies } from './project.service';
 import { createPersistenceScope } from '../infra/database/scope';
 import { createAuthScope } from '../infra/database/auth-scope';
 import type { AuthDependencies } from '../auth/dependencies';
@@ -8,8 +10,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   // Lazy: /health works without DATABASE_URL and never contacts PostgreSQL.
   const auth: AuthDependencies = { run: createAuthScope(bindings), settings: authSettings(bindings),
     ...(clientAddress ? { clientAddress } : {}) };
-  return { withTechnicalProbes: createPersistenceScope(bindings),
+  const projects: ProjectDependencies = { run: createProjectScope(bindings) };
+  return { projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = ReturnType<typeof createApplicationServices>;
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects'> & { projects?: ProjectDependencies };

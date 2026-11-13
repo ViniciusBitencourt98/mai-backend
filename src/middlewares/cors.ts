@@ -25,10 +25,11 @@ export function cors(
       return;
     }
     res.setHeader('Access-Control-Allow-Origin', origin);
-    const auth = req.path.startsWith('/auth/');
+    const projects = req.path === '/projects' || req.path.startsWith('/projects/');
+    const auth = req.path.startsWith('/auth/') || projects;
     if (auth) res.setHeader('Access-Control-Allow-Credentials', 'true');
     if (req.method === 'OPTIONS' && req.get('Access-Control-Request-Method')) {
-      res.setHeader('Access-Control-Allow-Methods', auth ? 'GET, HEAD, POST, OPTIONS' : methods.join(', '));
+      res.setHeader('Access-Control-Allow-Methods', projects ? 'GET, HEAD, POST, PATCH, OPTIONS' : auth ? 'GET, HEAD, POST, OPTIONS' : methods.join(', '));
       res.setHeader('Access-Control-Allow-Headers', auth ? 'Content-Type, X-CSRF-Token' : 'Content-Type');
       res.status(204).end();
       return;

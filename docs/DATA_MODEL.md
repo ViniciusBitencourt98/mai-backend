@@ -59,3 +59,15 @@ expiração. O banco também restringe e-mail a minúsculas. Senhas/tokens bruto
 são persistidos; não há entidade de negócio nova. Regras e retenção estão na
 [ADR-001](ADR-001-AUTHENTICATION.md). Aplicação das migrations e persistência real
 em PostgreSQL continuam pendentes nesta entrega, sem conexão de desenvolvimento.
+
+## Projetos implementados — TASK-BE-004
+
+`Project`/`projects` tem UUID, nome varchar(200), descrição nullable, enum
+`ProjectStatus` (`ACTIVE`, `ARCHIVED`), cor char(7) nullable, `start_date` e
+`due_date` DATE nullable, `owner_id` UUID, timestamps UTC e `archived_at` nullable.
+A FK ao usuário usa RESTRICT; não há exclusão definitiva nem relações obrigatórias
+com os módulos futuros. Índices: (owner_id,status,updated_at), (owner_id,updated_at),
+(owner_id,name) e (owner_id,created_at). A migration versionada adiciona CHECKs
+para a ordem das datas e a equivalência entre ARCHIVED e archived_at preenchido.
+Não foi aplicada a nenhum banco nesta tarefa. Remover a tabela/enum em rollback
+é destrutivo e requer backup/decisão explícita; não há rollback automático.

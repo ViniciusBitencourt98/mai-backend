@@ -17,3 +17,16 @@
 - ADR-005: método Gmail após prova de conceito (F0-11).
 
 O agente deve propor ADR em PR; não deve decidir silenciosamente mudanças de stack, infraestrutura paga ou mecanismos de acesso.
+
+## TASK-BE-004 — contrato de projetos para revisão
+
+- Estados ACTIVE/ARCHIVED, alinhados a RF-07. Arquivar/restaurar é idempotente;
+  PATCH de status usa a mesma regra, mantendo status e archivedAt consistentes.
+- Datas são civis PostgreSQL DATE e JSON YYYY-MM-DD, sem conversão de fuso.
+- Rotas `/projects` seguem o ticket explícito; sem DELETE no MVP.
+- Paginação offset limitada, ordenação estável por campo + UUID; filtro de status
+  não sobrepõe includeArchived=false. Ver exemplos no OpenAPI.
+- Consultas e mutações Prisma incluem ownerId. Recursos de outra conta e ausentes
+  recebem 404 idêntico; CSRF reutiliza os middlewares da autenticação.
+- Conforme autorização do ticket, pendências de Neon/PoC remota não bloquearam
+  implementação local. Isso não conclui os gates remotos de F0/F1.

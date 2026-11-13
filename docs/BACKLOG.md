@@ -143,3 +143,11 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 | `V2-06` | Automação de postagem |
 | `V2-07` | PWA offline instalável |
 | `V2-08` | Analytics e relatórios avançados |
+
+## Rastreabilidade TASK-BE-004
+
+Implementação backend de F2-01 e F2-02 preparada para revisão: Project, migration,
+seis endpoints `/projects`, DTOs, serviço, repository, OpenAPI e testes isolados.
+Integração Neon e aplicação da migration de desenvolvimento permanecem pendentes;
+nenhum gate remoto foi marcado como concluído. F2-03 e módulos associados fora
+do escopo deste ticket.
