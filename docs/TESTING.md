@@ -68,3 +68,23 @@ Aplique migrations separadamente somente em banco de desenvolvimento autorizado.
 O teste limpa apenas registros sintéticos próprios. Sem migration/deploy remoto.
 Client gerado por APIs oficiais Prisma 7.10.1 conforme roteiro já documentado,
 sem editar gerados ou desativar TLS/checksum; dependências/lockfile inalterados.
+
+## TASK-BE-007 — tarefas e subtarefas
+
+37 testes isolados em tests/tasks/tasks.test.ts cobrem criação/validação, projeto
+opcional/externo, datas mescladas, prioridades, transições/conclusão/reabertura,
+completedAt idempotente, filtros/paginação/atraso no fuso, nulos no fim, checklist,
+reordenação/remoção, limites e isolamento. HTTP testa auth/CSRF em todos os 14
+endpoints. Mocks de Prisma verificam predicados, lock anterior à leitura e whitelist
+de colunas; não comprovam persistência ou rollback PostgreSQL real.
+
+Suíte completa: 238 testes aprovados em 16 arquivos; lint, typecheck e build dry-run
+aprovados (XDG_CONFIG_HOME=/workspace/.config, WRANGLER_SEND_METRICS=false).
+`test:integration`: 9 skipped em 5 arquivos por ausência das URLs Neon. Os 2 novos
+testes reais em tasks.integration.ts cobrem persistência, completedAt/CHECKs, FK de
+projeto, reorder/rollback, atraso e operações concorrentes por clients separados.
+Sem mocks nesses testes, sem aplicação automática de migrations, cleanup somente
+de registros sintéticos próprios. Aguardar banco de desenvolvimento autorizado
+para validar os CHECKs, UNIQUE adiada e concorrência; produção fora do escopo.
+Client gerado com APIs oficiais Prisma 7.10.1 conforme o roteiro já documentado,
+sem editar gerados/desativar TLS ou checksum. Sem dependências/lockfile alterados.

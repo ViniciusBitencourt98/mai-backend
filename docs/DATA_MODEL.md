@@ -110,3 +110,27 @@ Migration 20261113000500_decupages versionada, não aplicada. FK do segmento usa
 CASCADE somente em relação ao pai; não existe endpoint para excluir esse pai.
 Remoção explícita de segmento compacta posições. Rollback removendo tabelas perde
 dados e requer backup/decisão, sem execução automática.
+
+## Tarefas — TASK-BE-007
+
+Task/tasks tem UUID, title varchar(200), descrição nullable, enums TaskStatus
+(PENDING,IN_PROGRESS,COMPLETED,CANCELLED) e TaskPriority (LOW,MEDIUM,HIGH,URGENT,
+nessa ordem PostgreSQL), start_date/due_date DATE nullable, completed_at,
+owner_id, project_id opcional e auditoria/arquivo TIMESTAMPTZ. FK composta de
+projeto/proprietário com RESTRICT; tarefa existe sem projeto. Índices:
+(owner_id,status,due_date), (owner_id,priority), (owner_id,due_date),
+(owner_id,project_id), (owner_id,created_at) e (owner_id,updated_at).
+CHECKs SQL mantêm a ordem das datas e equivalência COMPLETED/completed_at não nulo.
+
+Subtask/subtasks: UUID, task_id, título, completed boolean, position e timestamps.
+FK do filho CASCADE somente ao pai (sem endpoint de exclusão de tarefa); remoção
+individual preserva os irmãos. Índice (task_id,position) e UNIQUE adiada na migration
+para permitir swaps. Preservar DEFERRABLE INITIALLY DEFERRED em migrations futuras,
+pois não é expressável diretamente no schema Prisma. Coleção limitada a 100.
+
+Mutações do pai bloqueiam via UPDATE filtrado por owner_id antes de ler/validar
+estado e datas finais. Mutações de filhos usam o mesmo bloqueio e transação;
+falta de propriedade/ordem inválida reverte tudo. completed_at é UTC, datas de
+planejamento são civis; atraso usa a data local da preferência do usuário.
+Migration 20261113000600_tasks versionada e não aplicada; validar em desenvolvimento
+antes de produção. Rollback removendo tabelas/enums perde dados e exige backup.

@@ -54,3 +54,15 @@ validado dentro da transação; limite 100 mantém leitura/resposta/trabalho lim
 Bloqueio no pai serializa operações concorrentes, UNIQUE adiada permite swaps e
 rollback impede estado parcial. Projeto arquivado e decupagem arquivada continuam
 editáveis; arquivar preserva registros. Nenhuma alteração na arquitetura de auth.
+
+## TASK-BE-007 — tarefas, prazo civil e checklist
+
+Usar os status em maiúsculas já documentados e enum de prioridade ordenado
+LOW/MEDIUM/HIGH/URGENT. Datas civis startDate/dueDate seguem G-02; prazo com horário
+é extensão futura. Atraso considera a data no fuso do usuário, só tarefas ativas,
+sem confundir null com um instante. Estados terminais COMPLETED/CANCELLED exigem
+reabertura para PENDING antes de outra transição. Conclusão repetida preserva
+completedAt; reabrir limpa; subtarefas não bloqueiam nem herdam conclusão do pai.
+Sem hierarquia ilimitada: subtarefas de um nível, até 100, permutação completa para
+reorder. Projeto opcional próprio; sem recorrência/outbox/notificações nesse recorte.
+Essas decisões cobrem a parte de datas simples de F3-01; recorrência segue pendente.

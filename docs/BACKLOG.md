@@ -167,3 +167,11 @@ CRUD/arquivo/restauração, tags/filtros e reordenação transacional preparados
 revisão. Eventos, telas, upload e processamento de mídia fora do escopo. Integração
 real Neon, constraints e concorrência no banco aguardam ambiente de desenvolvimento;
 nenhum gate remoto ou ticket completo marcado sem revisão.
+
+## Rastreabilidade TASK-BE-007
+
+Recorte backend F3-01/F3-02/F3-03/F3-04: datas civis simples, Task/Subtask, migration,
+CRUD/estados/checklist, ordenação, filtros/atraso, ownership e OpenAPI para revisão.
+Recorrência, notificações, calendário, eventos e telas fora do ticket. Integração
+Neon real/migration aplicada e gates remotos continuam pendentes; não marcar tickets
+completos sem revisão.
