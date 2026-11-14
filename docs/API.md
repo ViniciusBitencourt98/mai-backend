@@ -38,7 +38,7 @@
 | GET | `/api/v1/dashboard?date=` | Resumo do dia |
 | GET/PATCH | `/api/v1/notification-preferences` | Preferências e horário de resumo |
 | GET | `/api/v1/notifications` | Histórico de lembretes/envios |
-| GET | `/api/v1/exports/events.ics?from=&to=` | Exportação de agenda/eventos |
+| GET | `/api/v1/exports/events.ics?from=&to=` | Proposta V2, não implementada; não bloqueia MVP |
 
 **Rotas de jobs:** Cron/Queue bindings protegidos pelo próprio ambiente Cloudflare, sem tornar endpoints de disparo públicos. Eventual endpoint administrativo de reenvio manual deve exigir autenticação e autorização forte, mais trilha de auditoria.
 

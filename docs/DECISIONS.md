@@ -7,7 +7,7 @@
 - Agendamento: Cloudflare Cron Triggers, Transactional Outbox e Cloudflare Queues.
 - Entrega de e-mail: Gmail (API HTTP ou SMTP após PoC), falhas tratadas manualmente no MVP.
 - Anotações/decupagens não exigem vínculos com projeto/evento.
-- Exportação ICS é unidirecional, não sincronização Google Calendar.
+- TASK-DOC-BE-001: ICS (F4-07/F4-08) e integração Google Calendar ficam em V2; não bloqueiam o MVP. Se houver exportação futura, arquivo não implica sincronização.
 
 ## Decisões pendentes (bloqueiam tickets dependentes, não todo o projeto)
 - ADR-001: proposta implementada para revisão no PR F1-01–F1-04: [sessões opacas, PBKDF2 e CSRF](ADR-001-AUTHENTICATION.md). A aprovação final cabe ao mantenedor.
@@ -103,3 +103,30 @@ exceções inclui movimentos para dentro e retira os movimentos para fora da jan
 Inativas/arquivo expõem somente exceções persistidas, como o histórico esparso das
 tarefas; ENDED terminal. Duração máxima 31 dias controla lookback/expansão. Essa
 restrição e as políticas de DST devem ser preservadas ou versionadas em revisão.
+
+
+## TASK-DOC-BE-001 — estratégia, escopo e continuidade
+
+Decisão explícita do mantenedor consolidada em [MVP_SCOPE](MVP_SCOPE.md) e
+[DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md): Code First em dois repos/ambientes
+Codex separados, sem exigir credenciais Neon aos agentes. Validação real ocorre
+posteriormente na máquina do desenvolvedor; testes isolados/HTTP simulado não
+atendem gates de banco/produção. Arquitetura Express/Workers/Prisma/Neon e
+React/Vite/Tailwind preservada; branches, Conventional Commits, PRs e merge manual,
+sem deploy automático. Os gates remotos antigos deixam de impedir implementação,
+mas continuam pendências de validação real.
+
+ICS/exportação e importação por arquivo no Google Calendar passam a V2, com IDs
+F4-07/F4-08 preservados. F4-09 deixa de depender desses IDs; F5-01 e lançamento
+não exigem ICS. Testes locais essenciais, segurança e validação com Neon continuam
+no MVP; cobertura extensiva além desses fluxos fica em V2.
+
+Identidade visual preservada: #315CFD, Montserrat em títulos, Inter em textos,
+componentes próprios reutilizados e responsividade/acessibilidade essenciais.
+Skill oficial shadcn/ui, skills do MAI e eventual adoção gradual estão em avaliação;
+nenhuma migração de biblioteca foi aprovada. Este PR não instala nem substitui UI.
+
+[PROJECT_STATUS](PROJECT_STATUS.md) registra os SHAs/evidências; BE-012 está na
+main, FE-015 ainda é preparatória sem HTTP editorial. [NEXT_STEPS](NEXT_STEPS.md)
+reserva BE-013, FE-016 e FE-017 sem reutilizar IDs. Relatórios antigos continuam
+como histórico datado, não substituem o levantamento atual.

@@ -1,5 +1,7 @@
 # Backlog completo e rastreável — MVP
 
+Escopo vigente: [MVP_SCOPE](MVP_SCOPE.md); evidências de implementação/merge/validação em [PROJECT_STATUS](PROJECT_STATUS.md), próximas tarefas em [NEXT_STEPS](NEXT_STEPS.md). Política Code First em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md). Os gates de integração real permanecem pendentes, mas não impedem implementação isolada sem credenciais.
+
 Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente após teste e revisão. Dependências referem-se a outros IDs deste arquivo. **Não executar tickets de V2 no MVP.**
 
 ## Padrão de execução por ticket
@@ -14,7 +16,7 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 | ID | Task | Dependências | Critério de aceite |
 |---|---|---|---|
 | `F0-01` | ☐ Revisar escopo/decisões e criar repositório | Documentos de referência disponíveis; decisões de stack fixadas | README, requisitos e ADR lidos; tickets rastreáveis |
-| `F0-02` | ☐ Inicializar monorepo com gerenciador de pacotes | F0-01 | apps/web, apps/api, packages/shared e scripts raiz funcionam |
+| `F0-02` | ☐ Preparar ambientes e scripts dos dois repositórios independentes | F0-01 | mai-frontend e mai-backend com manifests/lockfiles/scripts próprios; sem monorepo |
 | `F0-03` | ☐ Criar web React/Vite/TypeScript | F0-02 | SPA sobe localmente com tela inicial e build |
 | `F0-04` | ☐ Configurar Tailwind e tokens STYLE.md | F0-03 | Montserrat/Inter e tokens aplicados em componentes de exemplo |
 | `F0-05` | ☐ Criar API Express/TypeScript em Worker | F0-02 | /health responde via Wrangler local e remoto sem servidor Node persistente |
@@ -81,7 +83,7 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 | `F3-16` | ☐ Testar fuso, recorrência, conflitos e exceções | F3-11,F3-12,F3-15 | Testes para séries, timezone, cancelamento e atualização |
 | `F3-17` | ☐ E2E tarefa e gravação recorrente | F3-05,F3-08,F3-16 | Tarefa concluída e ocorrência remarcada reproduzíveis na UI |
 
-## Fase 4 — Editorial, dashboard e exportação
+## Fase 4 — Editorial e dashboard (ICS transferido para V2)
 
 | ID | Task | Dependências | Critério de aceite |
 |---|---|---|---|
@@ -91,9 +93,9 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 | `F4-04` | ☐ Exibir publicações na agenda unificada | F4-02,F3-15 | Calendário suporta filtro editorial e horário |
 | `F4-05` | ☐ Construir endpoint agregador dashboard | F3-13,F4-02 | Hoje, vencidas, próximos eventos/publicações por fuso |
 | `F4-06` | ☐ Construir dashboard com ações rápidas | F4-05,F2-08,F3-05 | Usuária vê dia e inicia tarefa/nota rapidamente |
-| `F4-07` | ☐ Implementar gerador RFC5545 de arquivo ICS | F3-12 | UID, escapas, timezones e RRULE testados |
-| `F4-08` | ☐ Criar endpoint/export UI para eventos ICS | F4-07 | Baixar ICS importável; explica ausência de sync |
-| `F4-09` | ☐ Testar E2E editorial/dashboard/export | F4-03,F4-04,F4-06,F4-08 | Agenda mostra publicação, ICS valida e dashboard correto |
+| `F4-07` | V2 — Implementar gerador RFC5545 de arquivo ICS | F3-12; fora do MVP | ID preservado; não bloqueia F4-09/F5/lançamento |
+| `F4-08` | V2 — Criar endpoint/export UI para eventos ICS | F4-07; fora do MVP | ID preservado; inclui futura importação por arquivo no Google Calendar, sem sync |
+| `F4-09` | ☐ Testar fluxos essenciais editorial/agenda/dashboard | F4-03,F4-04,F4-06 | Publicação e dashboard com API/Neon reais em validação local; sem dependência ICS |
 
 ## Fase 5 — Lembretes e operação assíncrona
 
@@ -125,7 +127,7 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 | `F6-05` | ☐ Documentar procedimento de falhas e reenvio manual | F5-13 | Runbook fácil de seguir; status explicados |
 | `F6-06` | ☐ Configurar observabilidade, logs e alertas básicos | F5-14 | Logs sanitizados, erros de jobs identificáveis |
 | `F6-07` | ☐ Configurar deploy de produção web/API e secrets | F0-13,F6-01 | Deploy repetível com env correto; pipeline verde |
-| `F6-08` | ☐ Executar smoke em produção com conta de teste | F6-07 | Criar nota/tarefa, evento, exportar ICS e enviar teste |
+| `F6-08` | ☐ Executar smoke em produção com conta de teste | F6-07 | Validar auth/CRUD, agenda/publicações/dashboard e e-mail; sem ICS, execução manual autorizada |
 | `F6-09` | ☐ Testar quotas gratuitas e documentar custo | F6-07 | Limites/risco de suspensão registrados, sem surpresas |
 | `F6-10` | ☐ Validar UX com usuária no celular | F6-08 | Jornadas reais testadas, observações registradas |
 | `F6-11` | ☐ Corrigir blockers do teste e congelar MVP | F6-10 | Falhas críticas resolvidas; aceite assinado/informal |
@@ -133,11 +135,13 @@ Cada linha é **uma task** para GitHub Issue/PR ou Codex. Marque `[x]` somente a
 
 ## Pós-MVP (não executar ainda)
 
+F4-07/F4-08 foram transferidos para V2 por TASK-DOC-BE-001, mantendo IDs e significado. Revisões extensivas de cobertura além dos fluxos essenciais ficam em V2, sem remover testes existentes nem adiar segurança/integridade.
+
 | ID | Funcionalidade |
 |---|---|
 | `V2-01` | Aprovação e revisão por clientes |
 | `V2-02` | Upload, player e transcrição de mídia |
-| `V2-03` | Sincronização Google Calendar em duas vias |
+| `V2-03` | Integração/sincronização Google Calendar; exportação/importação ICS preserva IDs F4-07/F4-08 |
 | `V2-04` | WhatsApp/push |
 | `V2-05` | Equipes, papéis e colaboração |
 | `V2-06` | Automação de postagem |
@@ -219,3 +223,22 @@ seis endpoints /publications, DTOs, ownership/CSRF, filtros/paginação e OpenAP
 Sem aplicação de migrations, credenciais Neon, postagem externa, aprovação, telas,
 calendário ou notificações. Integração Neon/constraints e gates remotos pendentes;
 não marcar tickets completos antes da revisão e validação autorizada.
+
+
+## TASK-DOC-BE-001 — documentação central e continuidade
+
+Escopo documental: PROJECT_STATUS, DEVELOPMENT_WORKFLOW, MVP_SCOPE e NEXT_STEPS;
+referências antigas de monorepo, gates Code First e dependências de ICS corrigidas.
+Backend BE-012 e frontend FE-015 estão incorporadas às mains inspecionadas; isso
+não conclui integração editorial, Neon ou produção. Nenhum checkbox remoto foi
+marcado e nenhum arquivo de implementação/migration foi alterado.
+
+| Próximo ID | Parcela / rastreabilidade | Dependências | Estado no levantamento |
+|---|---|---|---|
+| TASK-BE-013 | Publicações no calendário, backend de F4-04 | BE-010/011/012 incorporadas | Planejado, não implementado |
+| TASK-FE-016 | Integração HTTP editorial, F4-03 | FE-015 e BE-012 incorporadas | Planejado no repo frontend, não alterado por este PR |
+| TASK-FE-017 | Publicações no calendário, frontend de F4-04 | BE-013 incorporada, FE-016, FE-013/014 | Planejado no repo frontend |
+
+Dashboard, perfil, notificações, auditoria e validação mantêm IDs F4-05/06,
+F1-08, F5-01–14 e F6 correspondentes, conforme NEXT_STEPS. Não reutilizar IDs de
+tarefas já incorporadas nem criar numeração BE/FE nova sem conferir a fila.

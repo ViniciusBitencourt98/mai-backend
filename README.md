@@ -14,7 +14,7 @@ Este repositório é **mai-backend**. Sua contraparte é outro repositório Git 
 
 ## Comece aqui
 
-1. Leia `AGENTS.md` e `docs/REQUIREMENTS.md`.
+1. Leia `AGENTS.md` e a [documentação central de continuidade](docs/PROJECT_STATUS.md). Veja [workflow](docs/DEVELOPMENT_WORKFLOW.md), [escopo MVP/V2](docs/MVP_SCOPE.md) e [próximas tarefas](docs/NEXT_STEPS.md); depois `docs/REQUIREMENTS.md`.
 2. Confira `docs/ROADMAP.md` e `docs/BACKLOG.md` antes de delegar tarefas.
 3. Leia `docs/ARCHITECTURE.md`, `docs/API.md` e `docs/DECISIONS.md` antes de implementar.
 4. Para desenvolvimento visual, siga `STYLE.md` (Montserrat em títulos, Inter em textos).
@@ -47,19 +47,19 @@ Para permitir o frontend local, copie `.dev.vars.example` para `.dev.vars`
 (ignorado pelo Git). `CORS_ALLOWED_ORIGIN` aceita origens HTTP(S) exatas,
 separadas por vírgula, por exemplo `http://localhost:5173,https://app.example.invalid`.
 Não aceita `*`, `null`, paths ou barras finais. A resposta inclui `Vary: Origin`.
-Preflight permite apenas `GET, HEAD, OPTIONS` e `Content-Type`, suficientes
-para este bootstrap; futuros endpoints precisarão ampliar essa lista explicitamente.
-Credenciais de navegador não são habilitadas nesta etapa.
+Os módulos privados habilitam CORS com credenciais e os métodos/headers apropriados
+(incluindo X-CSRF-Token); confira `src/middlewares/cors.ts`. O health permanece público.
 
-O `.env.example` existente descreve integrações futuras. Prisma/Neon, autenticação,
-filas e e-mail não são implementados nem necessários para iniciar este backend.
+Prisma e autenticação já estão implementados, com conexão ao banco sob demanda;
+filas/e-mail permanecem pendentes. Nenhuma credencial é necessária para health e
+testes isolados; persistência real exige configuração local posterior do desenvolvedor.
 Não versione `.env`, `.dev.vars` ou segredos.
 
 ### Estrutura e runtime
 
 - `src/index.ts`: entrada Worker e adaptador nativo `cloudflare:node`.
 - `src/app.ts`: composição Express; `routes/`, `controllers/`, `services/` e
-  `middlewares/` separam responsabilidades. Não há camada de persistência ainda.
+  `middlewares/` separam responsabilidades; `repositories/` e `infra/database/` implementam persistência Prisma sob demanda.
 - `src/errors/`: erros HTTP explícitos; falhas inesperadas retornam mensagem genérica.
 - `tests/app.test.ts`: testes HTTP com Vitest e servidor Node efêmero.
 - `tests/worker.test.ts`: Wrangler inicia workerd local e testa a entrada Worker real.
@@ -121,13 +121,13 @@ os testes locais não concluem o aceite remoto.
 A [configuração Prisma/Neon](docs/PRISMA-NEON-LOCAL.md) descreve a branch Neon de
 desenvolvimento, URLs pooled/direta, migrations e testes. Prisma Client é gerado
 pelo postinstall (`npm ci`) e `npm run prisma:generate`. A aplicação injeta serviços
-com conexão sob demanda; `/health` não depende do banco. Não há endpoints de
-persistência públicos nem tabelas de negócio nesta etapa.
+com conexão sob demanda; `/health` não depende do banco. Já há modelos de negócio
+e endpoints privados de CRUD; consulte o estado e os contratos implementados.
 
 Configure `.env` para o CLI (`DATABASE_URL`, `DIRECT_URL`, `MAI_DATABASE_ENV`) e
 `.dev.vars` para o Wrangler (`DATABASE_URL`), sempre com credenciais de desenvolvimento.
-`npm run prisma:migrate:apply` aplica somente a migration técnica no banco de
-desenvolvimento após o guard. `npm run test:integration` testa Neon via workerd
+`npm run prisma:migrate:apply` aplica as migrations versionadas pendentes no banco de
+desenvolvimento após o guard, apenas em execução explícita autorizada; não rodar automaticamente. `npm run test:integration` testa Neon via workerd
 local; sem URLs, os casos são explicitamente skipped. Não há migrations automáticas.
 
 A conexão Neon real e a validação Prisma no Cloudflare remoto continuam pendentes.
