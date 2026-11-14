@@ -5,6 +5,19 @@ observado, não certifica operação em produção. Atualizar junto de cada entr
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em
 [NEXT_STEPS](NEXT_STEPS.md) e regras em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
 
+## Atualização BE-013 (branch de implementação)
+
+Após o levantamento DOC-BE-001 abaixo, a branch `feat/BE-013-calendar-publications`
+implementa PUBLICATION no calendário, aguardando revisão/merge. A base desta entrega
+é main `cc8fe44` (merge documental PR #14). Seleção explícita via types; padrão
+TASK,EVENT preservado. Publicações próprias datadas e não arquivadas/canceladas
+aparecem como pontos UTC sem duração/fallback; consulta limitada no Prisma.
+O frontend deste ticket não foi alterado; FE-016/017 e integração Neon permanecem
+pendentes. As tabelas/SHAs seguintes preservam o retrato das mains em DOC-BE-001,
+não afirmam que BE-013 já foi mesclada. Nesta entrega: lint/typecheck/build e
+430 testes locais em 23 arquivos passaram (38 novos); OpenAPI do calendário
+validado. Não houve execução Neon, migrations ou deploy. Ver API.md e TESTING.md.
+
 ## Bases inspecionadas e significado de conclusão
 
 | Repositório | Main inspecionada | Evidência de incorporação |

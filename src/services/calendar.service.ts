@@ -34,9 +34,18 @@ export class CalendarService {
     }while(more);}capacity();
    }
   }
-  items.sort((a,b)=>{const x=a.type==='TASK'?a.date:a.startAt,y=b.type==='TASK'?b.date:b.startAt;return x.localeCompare(y)||a.type.localeCompare(b.type)||a.id.localeCompare(b.id);});
+  if(q.types.includes('PUBLICATION')){
+   const publications=await this.repository.publications(ownerId,q.from,q.to);this.bound(publications);
+   for(const publication of publications){
+    items.push({type:'PUBLICATION',id:publication.id,masterId:publication.id,title:publication.title,timezone,
+     ruleId:null,version:null,occurrenceDate:null,recurring:false,modified:false,href:'/publications/'+publication.id,
+     scheduledAt:publication.scheduledAt.toISOString(),status:publication.status,platform:publication.platform,projectId:publication.projectId});
+    capacity(1);
+   }
+  }
+  items.sort((a,b)=>{const x=a.type==='TASK'?a.date:a.type==='EVENT'?a.startAt:a.scheduledAt,y=b.type==='TASK'?b.date:b.type==='EVENT'?b.startAt:b.scheduledAt;return x.localeCompare(y)||a.type.localeCompare(b.type)||a.id.localeCompare(b.id);});
   const offset=(q.page-1)*q.limit;return {items:items.slice(offset,offset+q.limit),page:{number:q.page,limit:q.limit,hasMore:items.length>offset+q.limit},timezone};
  }
- private bound(masters:CalendarMaster[]){if(masters.length>100)throw new HttpError(409,'CALENDAR_LIMIT','Maximum 100 matching masters per type; use types or narrow the window');}
+ private bound(masters:readonly unknown[]){if(masters.length>100)throw new HttpError(409,'CALENDAR_LIMIT','Maximum 100 matching masters per type; use types or narrow the window');}
 }
 export interface CalendarDependencies {run<T>(operation:(service:CalendarService)=>Promise<T>):Promise<T>;}

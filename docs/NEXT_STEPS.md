@@ -21,8 +21,10 @@ um ticket por execução e PR/revisão por repositório. Escopo vigente em
 | **F6-01/02/04/05/06** — correções e preparação | Ambos, em PRs separados | Resultados locais, auditoria e fluxos de e-mail implementados | Corrigir regressões/segurança, backup/restore, falhas e observabilidade antes da publicação |
 | **F6-07–F6-12** — lançamento e aceite final | Ação manual do mantenedor | Aceite e configuração de deploy revisados | Publicar explicitamente, smoke hospedado, quotas/UX (F6-09/10), correções/congelamento (F6-11) e manual; sem deploy automático/ICS |
 
-BE-013, FE-016 e FE-017 são os próximos IDs informados pelo mantenedor; não
-foram encontrados como implementados nas bases inspecionadas. Para dashboard,
+BE-013, FE-016 e FE-017 são os próximos IDs informados pelo mantenedor. BE-013
+foi implementada na branch feat/BE-013-calendar-publications após o levantamento
+DOC-BE-001, aguardando revisão/merge e Neon; FE-016/017 não foram implementadas
+por essa entrega. Para dashboard,
 perfil, notificações e auditoria, usar os IDs F já existentes até o mantenedor
 atribuir um TASK-BE/FE próprio. Não inventar BE-014/FE-018 nem reutilizar FE-015.
 

@@ -8,7 +8,7 @@ import type {PrismaClient} from '../../src/generated/prisma/client';
 const q=()=>calendarQueryDto.parse({from:'2026-03-08T00:00:00Z',to:'2026-03-10T00:00:00Z'});
 const master=(id:string,recurring=false):CalendarMaster=>({timezone:'UTC',id,title:id,date:'2026-03-08',completed:false,startAt:'2026-03-07T23:00:00Z',endAt:'2026-03-08T01:00:00Z',rule:recurring?{id:'00000000-0000-4000-8000-000000000001',version:1,timezone:'America/New_York',modifiedDates:['2026-03-08']}:null});
 function setup(tasks:CalendarMaster[]=[],events:CalendarMaster[]=[]){
- const repository:CalendarRepository={tasks:vi.fn(async(owner)=>owner==='owner'?tasks:[]),events:vi.fn(async(owner)=>owner==='owner'?events:[])};
+ const repository:CalendarRepository={publications:vi.fn(async()=>[]),tasks:vi.fn(async(owner)=>owner==='owner'?tasks:[]),events:vi.fn(async(owner)=>owner==='owner'?events:[])};
  const taskOccurrences=vi.fn().mockResolvedValue({items:[{date:'2026-03-08',completedAt:'2026-03-08T12:00:00Z'}],page:{nextAfter:null}});
  const eventOccurrences=vi.fn().mockResolvedValue({items:[{date:'2026-03-08',title:'Moved',startAt:'2026-03-08T13:00:00Z',endAt:'2026-03-08T14:00:00Z',cancelled:false},{date:'2026-03-09',cancelled:true}],page:{hasMore:false}});
  return {repository,taskOccurrences,eventOccurrences,service:new CalendarService(repository,{run:fn=>fn({occurrences:taskOccurrences}as unknown as RecurrenceService)},{run:fn=>fn({occurrences:eventOccurrences}as unknown as EventService)})};
