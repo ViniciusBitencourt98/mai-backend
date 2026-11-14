@@ -5,16 +5,29 @@ observado, não certifica operação em produção. Atualizar junto de cada entr
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em
 [NEXT_STEPS](NEXT_STEPS.md) e regras em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
 
-## Atualização BE-013 (branch de implementação)
+## Atualização BE-014 (branch de implementação)
 
-Após o levantamento DOC-BE-001 abaixo, a branch `feat/BE-013-calendar-publications`
-implementa PUBLICATION no calendário, aguardando revisão/merge. A base desta entrega
-é main `cc8fe44` (merge documental PR #14). Seleção explícita via types; padrão
+Base main `0ac482d`: BE-013 incorporada pelo PR #15. A branch
+`feat/BE-014-dashboard-api` implementa GET /dashboard, aguardando revisão/merge.
+Resumo no fuso da sessão, atraso limitado a 30 dias anteriores, próximos itens em
+sete dias, contagens com unidades/janelas explícitas e listas limitadas. Reutiliza
+o calendário, sem nova tabela/migration ou frontend. A UI do dashboard continua
+pendente (F4-06); Neon real e plano/custo SQL não foram validados. API.md descreve
+o contrato definitivo. Lint/typecheck/build e 451 testes locais em 25 arquivos
+passaram (21 novos); recorte OpenAPI e exemplo validados, contratos anteriores
+preservados. As tabelas históricas abaixo são o retrato DOC-BE-001 e
+não significam que BE-014 já esteja na main.
+
+## Atualização histórica BE-013 (já incorporada no PR #15)
+
+Após o levantamento DOC-BE-001 abaixo, BE-013 incorporou PUBLICATION ao calendário
+pelo PR #15, na main `0ac482d`. Sua base de implementação foi `cc8fe44`
+(merge documental PR #14). Seleção explícita via types; padrão
 TASK,EVENT preservado. Publicações próprias datadas e não arquivadas/canceladas
 aparecem como pontos UTC sem duração/fallback; consulta limitada no Prisma.
 O frontend deste ticket não foi alterado; FE-016/017 e integração Neon permanecem
 pendentes. As tabelas/SHAs seguintes preservam o retrato das mains em DOC-BE-001,
-não afirmam que BE-013 já foi mesclada. Nesta entrega: lint/typecheck/build e
+são anteriores à incorporação de BE-013. Na entrega BE-013: lint/typecheck/build e
 430 testes locais em 23 arquivos passaram (38 novos); OpenAPI do calendário
 validado. Não houve execução Neon, migrations ou deploy. Ver API.md e TESTING.md.
 

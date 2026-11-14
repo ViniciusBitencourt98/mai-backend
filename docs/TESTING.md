@@ -240,3 +240,48 @@ continuam pendentes de Neon de desenvolvimento, na máquina do desenvolvedor.
 Não houve solicitação de credenciais, execução dos 13 testes externos existentes,
 migration real, deploy ou modificação frontend. O defeito legado do OpenAPI global
 de decupagens registrado na BE-012 continua fora do escopo.
+
+## TASK-BE-014 — dashboard operacional
+
+21 testes novos em tests/dashboard/dashboard.test.ts e composition.test.ts.
+Testes isolados compõem DashboardService/CalendarService reais; a suíte de
+composição usa também RecurrenceService/EventService e os motores existentes,
+com persistência isolada. Cobrem vazio, dia/fuso da sessão, tarefas civis,
+atrasadas/concluídas/futuras, ocorrências sem duplicação do mestre, eventos
+atravessando meia-noite, recorrência/cancelamento/exceção movida, publicações
+planejadas/arquivadas/canceladas/PUBLISHED/sem data, limites temporais exclusivos,
+ordenação e corte independente de listas com contagens anteriores ao corte.
+
+DST de Nova York (dias de 23 e 25 horas), meia-noite suprimida em São Paulo e dia
+inteiro inexistente em Apia exercitam os limites civis. Testes HTTP Express com
+sessão isolada exigem autenticação, owner/fuso da sessão, query estrita (inclusive
+repetidos/injeção de ownerId/timezone), CORS com credenciais, GET-only no preflight
+e Cache-Control no-store. Count Prisma mockado verifica o escopo global por
+proprietário/arquivo/status sem leitura de linhas; falhas são propagadas, não zeros.
+
+Limites de fonte do calendário e soma combinada do dashboard são exercitados,
+sem resposta parcial. A comparação collect/list verifica preservação da paginação
+original. Suítes anteriores, inclusive BE-013, permanecem executadas.
+
+| Verificação | Resultado nesta entrega |
+|---|---|
+| npm run lint | Passou |
+| npm run typecheck | Passou |
+| npm test | 451 passaram em 25 arquivos, zero skips locais; inclui workerd |
+| npm run build | Passou, Wrangler dry-run sem upload |
+| OpenAPI 3.1, recorte /dashboard e schemas referenciados | Passou |
+| Exemplo completo de Dashboard contra JSON Schema/formats | Passou |
+| Contratos existentes | Todos os paths/schemas OpenAPI anteriores idênticos à main de base |
+| git diff --check e links Markdown alterados | Conferidos |
+
+Atrasos/contagem são limitados à janela de 30 dias anteriores, próximos itens a
+sete dias após a data selecionada; pendingTasks é global por mestre, não por
+ocorrência. Essa distinção é contrato, não truncamento silencioso. Os limites
+podem gerar CALENDAR_LIMIT/DASHBOARD_LIMIT em bases grandes; explorar os endpoints
+de domínio com janelas menores. Não há snapshot global entre coletas/count/scopes.
+
+Neon real, custo/plano SQL de COUNT/consultas, constraints e concorrência do resumo
+permanecem pendentes na máquina do desenvolvedor. Nenhum teste simulado comprova
+PostgreSQL. Os 13 casos externos existentes não foram executados, nenhuma credencial
+foi solicitada e não houve migrations, deploy, frontend ou envio de e-mail.
+A limitação legada do OpenAPI global de decupagens continua fora do escopo.

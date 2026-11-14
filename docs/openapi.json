@@ -12006,6 +12006,240 @@
           }
         }
       }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Resumo operacional do dia, atrasos e próximos itens do usuário",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "description": "Usa timezone IANA da sessão e date opcional (padrão: dia local no instante da requisição). Reutiliza calendário/motores BE-008/009/013. Hoje é o dia civil [início,início seguinte), incluindo eventos que atravessam meia-noite. Histórico de atraso limitado aos 30 dias anteriores, tarefas incompletas; próximos itens nos sete dias posteriores ao selecionado, excluindo itens já exibidos em hoje e tarefas concluídas/publicações PUBLISHED. Cada lista até 20; counts calculados antes do corte. Datas civis de tarefas não viram instantes/eventos. Publicações usam scheduledAt, sem duração ou fallback. Duas coletas internas limitadas e disjuntas: TASK no passado e todos os tipos em hoje+futuro; cada coleta herda limites 100 mestres por tipo e 10000 candidatos de expansão; total visível combinado <=10000. Não recalcula por lista/página. Contagem global pendingTasks é agregação de banco, sem carregar linhas. Não há snapshot global sob alterações concorrentes. Owner exclusivamente da sessão; CORS com credenciais, Cache-Control no-store e X-Request-Id. Endpoint somente leitura, sem tabelas/migrations/notificações/analytics.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "Dia civil YYYY-MM-DD; omitir usa hoje no fuso da sessão. A janela de 30 dias antes e oito dias a partir desta data precisa caber em 0001–9999; dia selecionado que não existe no fuso retorna 400. Sem parâmetro timezone/ownerId.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-03-08"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Limite independente para cada lista. Contagens não são truncadas. Para mais itens, seguir endpoints originais, sem page/cursor neste resumo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo e projeções operacionais próprias, Cache-Control no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                },
+                "example": {
+                  "date": "2026-03-08",
+                  "timezone": "UTC",
+                  "limit": 10,
+                  "windows": {
+                    "today": {
+                      "from": "2026-03-08T00:00:00.000Z",
+                      "to": "2026-03-09T00:00:00.000Z"
+                    },
+                    "overdue": {
+                      "from": "2026-02-06T00:00:00.000Z",
+                      "to": "2026-03-08T00:00:00.000Z",
+                      "days": 30
+                    },
+                    "upcoming": {
+                      "from": "2026-03-09T00:00:00.000Z",
+                      "to": "2026-03-16T00:00:00.000Z",
+                      "days": 7
+                    }
+                  },
+                  "counts": {
+                    "pendingTasks": 2,
+                    "overdueTasks": 0,
+                    "todayActivities": 2,
+                    "plannedPublications": 1
+                  },
+                  "today": {
+                    "items": [
+                      {
+                        "id": "00000000-0000-4000-8000-000000000001",
+                        "masterId": "00000000-0000-4000-8000-000000000001",
+                        "title": "Preparar roteiro",
+                        "timezone": "UTC",
+                        "ruleId": null,
+                        "version": null,
+                        "occurrenceDate": null,
+                        "recurring": false,
+                        "modified": false,
+                        "href": "/tasks/00000000-0000-4000-8000-000000000001",
+                        "type": "TASK",
+                        "date": "2026-03-08",
+                        "completed": false
+                      },
+                      {
+                        "id": "00000000-0000-4000-8000-000000000002",
+                        "masterId": "00000000-0000-4000-8000-000000000002",
+                        "title": "Gravação",
+                        "timezone": "UTC",
+                        "ruleId": null,
+                        "version": null,
+                        "occurrenceDate": null,
+                        "recurring": false,
+                        "modified": false,
+                        "href": "/events/00000000-0000-4000-8000-000000000002",
+                        "type": "EVENT",
+                        "startAt": "2026-03-08T12:00:00.000Z",
+                        "endAt": "2026-03-08T13:00:00.000Z"
+                      }
+                    ],
+                    "hasMore": false
+                  },
+                  "overdueTasks": {
+                    "items": [],
+                    "hasMore": false
+                  },
+                  "upcomingTasks": {
+                    "items": [
+                      {
+                        "id": "00000000-0000-4000-8000-000000000004",
+                        "masterId": "00000000-0000-4000-8000-000000000004",
+                        "title": "Preparar roteiro",
+                        "timezone": "UTC",
+                        "ruleId": null,
+                        "version": null,
+                        "occurrenceDate": null,
+                        "recurring": false,
+                        "modified": false,
+                        "href": "/tasks/00000000-0000-4000-8000-000000000004",
+                        "type": "TASK",
+                        "date": "2026-03-09",
+                        "completed": false
+                      }
+                    ],
+                    "hasMore": false
+                  },
+                  "upcomingEvents": {
+                    "items": [],
+                    "hasMore": false
+                  },
+                  "upcomingPublications": {
+                    "items": [
+                      {
+                        "id": "00000000-0000-4000-8000-000000000003",
+                        "masterId": "00000000-0000-4000-8000-000000000003",
+                        "title": "Teaser",
+                        "timezone": "UTC",
+                        "ruleId": null,
+                        "version": null,
+                        "occurrenceDate": null,
+                        "recurring": false,
+                        "modified": false,
+                        "href": "/publications/00000000-0000-4000-8000-000000000003",
+                        "type": "PUBLICATION",
+                        "scheduledAt": "2026-03-09T15:00:00.000Z",
+                        "status": "PLANNED",
+                        "platform": "INSTAGRAM",
+                        "projectId": null
+                      }
+                    ],
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR: query desconhecida/repetida, data/limite inválidos, fuso da sessão inválido, dia civil inexistente ou janela fora dos anos suportados 0001–9999.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão obrigatória.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "DASHBOARD_LIMIT: mais de 10000 candidatos visíveis combinados; CALENDAR_LIMIT/limites de domínio propagados: mais de 100 mestres por tipo/janela ou expansão excessiva. Sem resultados parciais/contagens falsas; consultar endpoints de domínio com janelas menores.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -15170,6 +15404,267 @@
         },
         "description": "Projeção editorial mínima. Não contém ownerId, caption, notes, externalUrl, publishedAt, startAt ou endAt. Arquivadas/CANCELLED/sem scheduledAt omitidas; demais estados manuais podem aparecer, inclusive PUBLISHED.",
         "additionalProperties": false
+      },
+      "DashboardWindows": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "today",
+          "overdue",
+          "upcoming"
+        ],
+        "properties": {
+          "today": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "description": "Intervalo UTC semiaberto [from,to) calculado por datas civis no fuso da sessão, sem supor dias de 24h."
+          },
+          "overdue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to",
+              "days"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "days": {
+                "type": "integer",
+                "const": 30
+              }
+            },
+            "description": "Intervalo UTC semiaberto [from,to) calculado por datas civis no fuso da sessão, sem supor dias de 24h."
+          },
+          "upcoming": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to",
+              "days"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "days": {
+                "type": "integer",
+                "const": 7
+              }
+            },
+            "description": "Intervalo UTC semiaberto [from,to) calculado por datas civis no fuso da sessão, sem supor dias de 24h."
+          }
+        }
+      },
+      "DashboardCounts": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pendingTasks",
+          "overdueTasks",
+          "todayActivities",
+          "plannedPublications"
+        ],
+        "properties": {
+          "pendingTasks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Contagem PostgreSQL global de tarefas principais próprias não arquivadas com status PENDING/IN_PROGRESS. Inclui sem prazo e mestres recorrentes uma vez, inclusive regras pausadas/encerradas se o mestre mantiver status ativo. Não soma ocorrências e independe da data selecionada."
+          },
+          "overdueTasks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número de tarefas/ocorrências incompletas na janela retrospectiva de 30 dias; data civil anterior ao primeiro dia do intervalo de hoje no fuso aplicável ao item. Não inclui passado anterior à janela, futuros, concluídas nem itens já classificados em hoje. Não é total histórico global."
+          },
+          "todayActivities": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Atividades na janela civil selecionada: tarefas com dia que intersecta a janela no fuso do item (inclui concluídas), eventos/ocorrências sobrepostos e publicações datadas (inclui PUBLISHED). Canceladas/arquivadas são omitidas pelo calendário."
+          },
+          "plannedPublications": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Publicações não canceladas/arquivadas e diferentes de PUBLISHED com scheduledAt desde o começo do dia selecionado até o fim dos próximos sete dias. Sem fallback para publishedAt; não é total global de publicações."
+          }
+        },
+        "description": "Contagens antes de limitar listas. Unidades/janelas diferentes são intencionais; sem snapshot transacional global entre as consultas."
+      },
+      "DashboardActivities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "hasMore"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CalendarTask"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarPublication"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type"
+              }
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "description": "Primeiros limit itens na ordem do calendário; hasMore indica mais candidatos na janela. Sem paginação repetida do agregado; usar o endpoint de domínio/calendário para explorar mais."
+      },
+      "DashboardTasks": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "hasMore"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/CalendarTask"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "description": "Primeiros limit itens na ordem do calendário; hasMore indica mais candidatos na janela. Sem paginação repetida do agregado; usar o endpoint de domínio/calendário para explorar mais."
+      },
+      "DashboardEvents": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "hasMore"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/CalendarEvent"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "description": "Primeiros limit itens na ordem do calendário; hasMore indica mais candidatos na janela. Sem paginação repetida do agregado; usar o endpoint de domínio/calendário para explorar mais."
+      },
+      "DashboardPublications": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "hasMore"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/CalendarPublication"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "description": "Primeiros limit itens na ordem do calendário; hasMore indica mais candidatos na janela. Sem paginação repetida do agregado; usar o endpoint de domínio/calendário para explorar mais."
+      },
+      "Dashboard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date",
+          "timezone",
+          "limit",
+          "windows",
+          "counts",
+          "today",
+          "overdueTasks",
+          "upcomingTasks",
+          "upcomingEvents",
+          "upcomingPublications"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Dia de referência no fuso da sessão, não uma data UTC convertida artificialmente."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Preferência IANA do usuário autenticado; sem override por query."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "windows": {
+            "$ref": "#/components/schemas/DashboardWindows"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/DashboardCounts"
+          },
+          "today": {
+            "$ref": "#/components/schemas/DashboardActivities"
+          },
+          "overdueTasks": {
+            "$ref": "#/components/schemas/DashboardTasks"
+          },
+          "upcomingTasks": {
+            "$ref": "#/components/schemas/DashboardTasks"
+          },
+          "upcomingEvents": {
+            "$ref": "#/components/schemas/DashboardEvents"
+          },
+          "upcomingPublications": {
+            "$ref": "#/components/schemas/DashboardPublications"
+          }
+        }
       }
     },
     "securitySchemes": {

@@ -9,10 +9,10 @@ um ticket por execução e PR/revisão por repositório. Escopo vigente em
 
 | Tarefa / ID existente | Repositório | Dependências | Entrega / limite |
 |---|---|---|---|
-| **TASK-BE-013** — publicações no calendário (F4-04, parcela backend) | Backend | BE-010/011 e BE-012 incorporadas | Ampliar DTO/projeção/OpenAPI de /calendar para publicações datadas, com ownership, filtros, paginação/limites e testes; sem postagem externa |
+| **TASK-BE-013** — publicações no calendário (incorporada, PR #15) | Backend | BE-010/011 e BE-012 incorporadas | Ampliar DTO/projeção/OpenAPI de /calendar para publicações datadas, com ownership, filtros, paginação/limites e testes; sem postagem externa |
 | **TASK-FE-016** — integração de publicações (F4-03) | Frontend | FE-015 e BE-012 incorporadas | Adaptador HTTP real, sessão/CSRF, enums/campos/datas/filtros conforme OpenAPI; substituir indisponibilidade por integração sem fallback demo silencioso |
 | **TASK-FE-017** — publicações no calendário (F4-04, parcela frontend) | Frontend | BE-013 incorporada; FE-016; FE-013/014 já incorporadas | Consumir novo tipo/filtro, representar e abrir publicação original; preservar tarefas/eventos/fusos |
-| **F4-05** — dashboard agregado | Backend | F3-13/BE-010, F4-02/BE-012; conferir contrato com BE-013 | Endpoint autenticado de hoje, atrasadas e próximos eventos/publicações; limites/fuso/ownership e OpenAPI |
+| **TASK-BE-014 / F4-05** — dashboard agregado (implementado em branch, revisão pendente) | Backend | F3-13/BE-010, F4-02/BE-012; conferir contrato com BE-013 | Endpoint autenticado de hoje, atrasadas e próximos eventos/publicações; limites/fuso/ownership e OpenAPI |
 | **F4-06** — dashboard básico e ações rápidas | Frontend | F4-05 incorporada, FE-008/010 e integração editorial FE-016 | Substituir placeholder por dados reais e ações de tarefa/anotação; sem analytics V2 |
 | **F1-08** — perfil e preferências | Backend → frontend | Auth F1-02/03/04; lacunas confirmadas no status | Definir edição de timezone/preferências necessárias ao e-mail, contrato antes da tela; leitura de auth/me não basta |
 | **F5-01–F5-14** — notificações/e-mail/resumo | Backend e frontend em tickets próprios | Fluxos de domínio; F4-09 sem ICS; F1-08 para preferências; PoCs F0-09/10/11 | Outbox transacional, scheduler/fila, adaptador Gmail, idempotência, resumo por fuso e observabilidade; sem retry automático de envio |
@@ -21,23 +21,23 @@ um ticket por execução e PR/revisão por repositório. Escopo vigente em
 | **F6-01/02/04/05/06** — correções e preparação | Ambos, em PRs separados | Resultados locais, auditoria e fluxos de e-mail implementados | Corrigir regressões/segurança, backup/restore, falhas e observabilidade antes da publicação |
 | **F6-07–F6-12** — lançamento e aceite final | Ação manual do mantenedor | Aceite e configuração de deploy revisados | Publicar explicitamente, smoke hospedado, quotas/UX (F6-09/10), correções/congelamento (F6-11) e manual; sem deploy automático/ICS |
 
-BE-013, FE-016 e FE-017 são os próximos IDs informados pelo mantenedor. BE-013
-foi implementada na branch feat/BE-013-calendar-publications após o levantamento
-DOC-BE-001, aguardando revisão/merge e Neon; FE-016/017 não foram implementadas
-por essa entrega. Para dashboard,
-perfil, notificações e auditoria, usar os IDs F já existentes até o mantenedor
-atribuir um TASK-BE/FE próprio. Não inventar BE-014/FE-018 nem reutilizar FE-015.
+BE-013 foi incorporada à main pelo PR #15; a validação Neon continua pendente.
+FE-016/017 pertencem ao frontend e não foram executadas por BE-014; conferir a
+main daquele repo antes de iniciar suas tarefas, pois o retrato DOC-BE-001 é datado. O mantenedor atribuiu TASK-BE-014 à API do dashboard, preparada na branch
+feat/BE-014-dashboard-api; a UI segue F4-06 até receber ID próprio. Para perfil,
+notificações e auditoria, preservar os IDs F existentes. Não inventar novos IDs
+BE/FE nem reutilizar FE-015.
 
 ## O que pode avançar em paralelo
 
-BE-013 e FE-016 usam a base BE-012 já incorporada e podem ser desenvolvidas em
-ambientes Codex separados. FE-017 aguarda o contrato de calendário de BE-013 e a
-integração editorial de FE-016. Auditoria visual pode trabalhar com a UI existente;
+BE-013 já está incorporada. FE-016 pode usar o contrato BE-012; FE-017 depende
+da integração editorial FE-016 e já pode conferir o contrato de calendário BE-013.
+Os trabalhos de UI e backend usam ambientes Codex separados. Auditoria visual pode trabalhar com a UI existente;
 se tocar nos mesmos componentes/rotas de FE-016/017, combinar limites de arquivos
 e revisar conflitos. Cada PR registra dependências e exige merge manual.
 
-A API do dashboard pode ser desenhada em paralelo, mas o PR frontend depende do
-contrato efetivamente incorporado. E-mail não precisa esperar ICS: o gate F4-09
+A API do dashboard está implementada na branch BE-014; o PR frontend F4-06
+depende da revisão/incorporação do contrato GET /dashboard. E-mail não precisa esperar ICS: o gate F4-09
 foi reduzido aos fluxos editoriais/agenda/dashboard essenciais.
 
 ## Lacunas a tratar antes do aceite integrado
