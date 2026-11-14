@@ -130,3 +130,20 @@ nenhuma migração de biblioteca foi aprovada. Este PR não instala nem substitu
 main, FE-015 ainda é preparatória sem HTTP editorial. [NEXT_STEPS](NEXT_STEPS.md)
 reserva BE-013, FE-016 e FE-017 sem reutilizar IDs. Relatórios antigos continuam
 como histórico datado, não substituem o levantamento atual.
+
+
+## TASK-BE-013 — projeção editorial no calendário
+
+PUBLICATION é opt-in via types, mantendo TASK,EVENT como padrão por compatibilidade
+com os consumidores existentes. scheduledAt é ponto temporal UTC sem duração e
+sem fallback para publishedAt; fuso de apresentação vem da sessão. Omitir sem data,
+arquivadas e CANCELLED, como as demais entidades canceladas na agenda; demais
+estados manuais datados aparecem. Projeto opcional e identidade/href originais,
+sem expor conteúdo editorial extra nem criar registro de evento/calendário.
+
+Reusar o agregador/ordenação/paginação e limites existentes: até 100 registros
+por tipo, consulta Prisma com janela/proprietário/arquivo/status e sentinela 101.
+Publicações participam do orçamento global junto das expansões. Não alterar
+recorrência, CRUD/editorial, schema, autenticação ou migrations. A projeção usa
+índices já versionados na BE-012. Integração real com Neon permanece pendente;
+FE-017 deve consumir o novo tipo só após incorporação do contrato.

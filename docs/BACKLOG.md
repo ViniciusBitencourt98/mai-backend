@@ -235,10 +235,19 @@ marcado e nenhum arquivo de implementação/migration foi alterado.
 
 | Próximo ID | Parcela / rastreabilidade | Dependências | Estado no levantamento |
 |---|---|---|---|
-| TASK-BE-013 | Publicações no calendário, backend de F4-04 | BE-010/011/012 incorporadas | Planejado, não implementado |
+| TASK-BE-013 | Publicações no calendário, backend de F4-04 | BE-010/011/012 incorporadas | Implementado nesta branch BE-013; revisão/merge e Neon pendentes |
 | TASK-FE-016 | Integração HTTP editorial, F4-03 | FE-015 e BE-012 incorporadas | Planejado no repo frontend, não alterado por este PR |
 | TASK-FE-017 | Publicações no calendário, frontend de F4-04 | BE-013 incorporada, FE-016, FE-013/014 | Planejado no repo frontend |
 
 Dashboard, perfil, notificações, auditoria e validação mantêm IDs F4-05/06,
 F1-08, F5-01–14 e F6 correspondentes, conforme NEXT_STEPS. Não reutilizar IDs de
 tarefas já incorporadas nem criar numeração BE/FE nova sem conferir a fila.
+
+
+## TASK-BE-013 — F4-04, parcela backend
+
+Calendário suporta PUBLICATION explícito e combinações, preservando TASK,EVENT no
+padrão. Projeção mínima por scheduledAt, sem duração/fallback, com status/plataforma/
+projeto, ownership e recorte PostgreSQL limitado. Query, agregação, OpenAPI e testes
+isolados preparados para revisão; sem schema/migration nova nem alteração frontend.
+F4-04 completo ainda depende FE-017 e validação real. Não marcar gate Neon/remoto.

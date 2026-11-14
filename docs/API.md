@@ -469,18 +469,21 @@ regra, refletindo metadados herdados. Exceções materializadas mantêm seu time
 
 `GET /calendar` exige sessão e retorna projeções mínimas, sem persistência própria.
 Query estrita: from/to ISO 8601 com Z/offset, from < to, janela máxima 31*24h;
-types opcional `TASK`, `EVENT` ou `TASK,EVENT` (padrão ambos, sem espaços/repetições);
+types opcional com `TASK`, `EVENT`, `PUBLICATION` ou qualquer combinação sem
+espaços/repetições (padrão preservado `TASK,EVENT`; publicações exigem seleção explícita);
 page=1 (até 10.000), limit=20 (1–100). Parâmetros repetidos/desconhecidos retornam
 400. Retorno `{items: CalendarItem[],page:{number,limit,hasMore},timezone}`.
 
-Itens discriminados por type TASK/EVENT. Campos comuns: id,masterId,ruleId nullable,
+Itens discriminados por type TASK/EVENT/PUBLICATION. Campos comuns: id,masterId,ruleId nullable,
 version nullable,occurrenceDate nullable,title,recurring,modified,href,timezone.
 Id de ocorrência é ruleId:data original; use type+id como chave no frontend.
 href aponta para /tasks/:id ou /events/:id. modified indica estado individual de
 tarefa persistido ou exceção de evento; mestres pontuais têm false. TASK adiciona
 date YYYY-MM-DD e completed; não atribui hora/endAt artificiais. EVENT adiciona
-startAt/endAt UTC. timezone do item é o da regra, do evento único ou da preferência
-do usuário para tarefa única; timezone externo é a preferência do usuário.
+startAt/endAt UTC. PUBLICATION adiciona scheduledAt UTC, status editorial, platform e
+projectId nullable, com href /publications/:id; ruleId/version/occurrenceDate null e
+recurring/modified false, sem startAt/endAt/duração artificial. timezone do item é o da regra, do evento único ou da preferência
+do usuário para tarefa única/publicação; timezone externo é a preferência do usuário.
 
 Eventos usam overlap semiaberto [from,to), incluindo compromissos atravessando
 limites. Tarefas civis entram se seu dia intersecta a janela no fuso correspondente
@@ -496,18 +499,21 @@ movidas substituem a data original e entram/saem pelo intervalo final. As polít
 existentes de DST, clamp mensal e limites de geração permanecem inalteradas.
 
 Ordenação determinística lexicográfica da data civil (TASK) ou instante UTC (EVENT),
-seguida de type e id; tarefas sem hora ficam no início da sua data, sem criar um
+ou scheduledAt UTC (PUBLICATION), seguida de type e id; tarefas sem hora ficam no início da sua data, sem criar um
 instante UTC fictício. A paginação é offset após agregação; mudanças concorrentes
 podem deslocar páginas. Não há snapshot global entre serviços, e ruleId é fixado na
 expansão para impedir misturar versões durante edição concorrente.
 
-Limites: 100 mestres selecionados por tipo e 10.000 itens processados na expansão (incluindo cancelados antes da filtragem). Excesso
+Limites: 100 mestres/registros selecionados por tipo e 10.000 itens no orçamento
+de expansão/agregação (incluindo ocorrências canceladas antes da filtragem e
+publicações). Excesso
 retorna 409 CALENDAR_LIMIT, sem resposta parcial. Séries não arquivadas contam no
 limite mesmo se não gerarem itens na janela. Use types/janela menor ou endpoints
 de domínio para conjuntos maiores. Limites próprios dos serviços continuam válidos.
 401 sem sessão, 400 query, 409 limites, 500 interno/503 serviço não configurado;
 403 CORS se Origin proibida. Cache-Control no-store, CORS com credenciais. Sem
-migrations/schema novos, publicações, dashboard, ICS, UI ou notificações.
+migrations/schema novos, dashboard, ICS, UI ou notificações. Publicações foram
+adicionadas no recorte BE-013 descrito abaixo.
 
 
 ## Publicações editoriais — TASK-BE-012
@@ -556,3 +562,40 @@ CORS com credenciais, Cache-Control no-store e X-Request-Id. Erros padronizados:
 400 VALIDATION_ERROR/INVALID_JSON, 401 UNAUTHENTICATED, 403 CORS/CSRF, 404 NOT_FOUND
 para publicação/projeto ausente ou externo, 413 corpo >100 KiB, 415 exige JSON
 em POST/PATCH, 500 INTERNAL_ERROR sanitizado, 503 serviço não configurado.
+
+
+### Publicações no calendário — TASK-BE-013
+
+`GET /calendar?from=2026-11-20T00:00:00Z&to=2026-11-21T00:00:00Z&types=PUBLICATION`
+retorna publicações próprias com scheduledAt na janela semiaberta [from,to),
+não arquivadas e status diferente de CANCELLED. Sem scheduledAt ficam fora, mesmo
+com publishedAt preenchido. Demais estados datados, inclusive PUBLISHED, aparecem;
+nenhuma leitura muda estado/data ou cria evento. scheduledAt usa precisão de
+milissegundos em UTC, com apresentação no fuso da sessão. Não há hora de término.
+
+A projeção inclui somente identidade/origem comum, title, scheduledAt, status,
+platform e projectId opcional. Não expõe caption, notes, externalUrl, publishedAt
+ou ownerId. O ID é o UUID original, masterId igual a id, href /publications/:id;
+a chave para o consumidor continua type+id. Formato/auditoria estão no CRUD original.
+
+PUBLICATION pode ser usado sozinho ou com TASK/EVENT, em qualquer ordem. Sem types,
+o padrão continua TASK,EVENT para preservar clientes BE-010/FE-013/014. Opt-in de
+todos: `types=TASK,EVENT,PUBLICATION`. Query repetida, tipos repetidos/desconhecidos,
+espaços, ownerId do cliente ou janela inválida retornam 400. Nenhuma mudança nos
+DTOs dos itens TASK/EVENT nem nas regras de suas recorrências.
+
+A consulta Prisma filtra ownerId da sessão, archivedAt/status e scheduledAt gte/lt
+no banco. Seleciona só seis campos e até 101 registros (sentinela), com predicados compatíveis com os índices
+existentes owner_id/archived_at/scheduled_at e owner_id/scheduled_at (plano real
+EXPLAIN permanece pendente). Mais de 100
+publicações na janela retorna 409 CALENDAR_LIMIT, mesmo com limit=1; nunca entrega
+página parcial silenciosa. Não carrega todas as publicações para filtrar em memória.
+O orçamento global também conta cada publicação além das expansões já existentes.
+Ordenação usa data/instante lexicográfico, depois type e id asc; paginação única
+após agregação. Offset permanece sem snapshot concorrente entre requisições.
+
+Autenticação, CORS com credenciais, Cache-Control no-store e erros 400/401/403/409/
+500/503 preservados. Sem nova tabela, migration ou endpoint, sem dependência de
+publicação automática, dashboard, notificações, ICS ou Google Calendar. Contrato e
+exemplo em CalendarPublication/CalendarPage no OpenAPI; persistência Neon real
+permanece pendente, não demonstrada pelos mocks dos testes isolados.

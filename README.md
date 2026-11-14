@@ -158,3 +158,12 @@ e filtros paginados, com sessão/CSRF e projeto opcional próprio. Contrato em
 [API](docs/API.md), [OpenAPI](docs/openapi.json) e decisões em
 [ADR-004](docs/ADR-004-EDITORIAL-PUBLICATIONS.md). Migration versionada, não aplicada;
 integração Neon pendente. Não publica em redes sociais nem altera `/calendar`.
+
+
+## Publicações no calendário (TASK-BE-013)
+
+`GET /calendar` aceita `types=PUBLICATION` e combinações com TASK/EVENT. O padrão
+sem types permanece TASK,EVENT; publicações exigem seleção explícita. A projeção
+usa scheduledAt como ponto sem duração, exclui sem data/arquivadas/canceladas e
+preserva ownership/limites. Ver [API](docs/API.md#publicações-no-calendário--task-be-013).
+Sem migration nova ou alteração no frontend; Neon real permanece pendente.

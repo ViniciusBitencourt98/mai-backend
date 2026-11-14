@@ -55,6 +55,7 @@ function fixture() {
     rule: { id: activeRule.id, version: activeRule.version, timezone: activeRule.timezone, modifiedDates: dates },
   });
   const repository: CalendarRepository = {
+    publications: async () => [],
     tasks: vi.fn(async (owner) => owner === 'A' ? [master(taskId, 'Task', task.current!, task.occurrences.map((o) => o.date))] : []),
     events: vi.fn(async (owner) => owner === 'A' ? [master(eventId, event.event.title, event.rules[0]!, event.exceptions.map((o) => o.date))] : []),
   };

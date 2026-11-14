@@ -200,3 +200,43 @@ ordenação de nulos/paginação, datas e arquivo concorrente. Os 13 testes exte
 existentes não foram executados nesta tarefa. Não houve solicitação de credenciais,
 migration em banco real, bootstrap, deploy ou postagem em rede social. Mocks não
 substituem a validação integrada futura e /calendar não foi modificado.
+
+
+## TASK-BE-013 — publicações no calendário
+
+38 testes novos em tests/calendar/publications.test.ts, com query estrita,
+combinações/permutação dos três tipos e padrão omitido TASK,EVENT preservado.
+O serviço e repository Prisma reais compõem uma fronteira de banco simulada:
+instante planejado/sem data (sem fallback publishedAt), arquivo/cancelamento,
+janela [from,to), limites exatos/milissegundos, projeto opcional, proprietário,
+projeção mínima/identidade, fusos e transição DST, ordenação/desempates/paginação
+combinados, seleção de repositories e sentinela de excesso. Teste HTTP Express
+com sessão isolada exige autenticação, deriva owner da sessão, rejeita ownerId e
+queries repetidas, verifica CORS com credenciais e no-store. A simulação da fronteira
+não comprova execução das queries em PostgreSQL.
+
+O teste de orçamento mantém 10.000 ocorrências de eventos canceladas (contadas
+antes de ocultar) e verifica que adicionar publicação excede o limite. Até 100
+publicações datadas são aceitas; 101 retornam CALENDAR_LIMIT antes de paginar,
+mesmo com limit=1. As suítes anteriores de calendário/composição apenas ganharam
+uma dependência publications vazia para atender a interface; asserções anteriores
+preservadas. Todos os motores/regras de recorrência existentes continuam exercitados.
+
+| Comando/check | Resultado desta entrega |
+|---|---|
+| npm run lint | Passou |
+| npm run typecheck | Passou |
+| npm test | 430 passaram em 23 arquivos, zero skips na suíte local; inclui workerd |
+| npm run build | Passou, Wrangler dry-run sem upload |
+| OpenAPI 3.1, recorte /calendar e schemas referenciados | Passou; exemplo editorial validado contra CalendarPage |
+| Compatibilidade do contrato | CalendarTask/CalendarEvent e default TASK,EVENT idênticos à base |
+| git diff --check | Passou |
+
+Sem alteração de schema/lockfile/CRUD/editorial/auth, sem nova tabela/migration.
+A consulta recorta owner/arquivo/status/janela no Prisma, seleciona apenas seis
+campos e take=101; índices existentes são compatíveis com o predicado. O plano
+real, persistência/isolamento e combinação com recorrências sob concorrência
+continuam pendentes de Neon de desenvolvimento, na máquina do desenvolvedor.
+Não houve solicitação de credenciais, execução dos 13 testes externos existentes,
+migration real, deploy ou modificação frontend. O defeito legado do OpenAPI global
+de decupagens registrado na BE-012 continua fora do escopo.

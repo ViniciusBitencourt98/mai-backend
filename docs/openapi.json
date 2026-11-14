@@ -10774,8 +10774,8 @@
     },
     "/calendar": {
       "get": {
-        "summary": "Agregar tarefas e eventos do usuário",
-        "description": "Janela [from,to), até 31 dias. Tarefas sem hora usam date civil no timezone do item; concluídas incluídas, canceladas/arquivadas omitidas. Eventos sobrepostos e exceções movidas usam tempos finais; canceladas omitidas. Reutiliza BE-008/009; inativas apenas estados salvos. Máximo 100 mestres por tipo/10000 itens expandidos, excesso 409 sem truncar. Ordenação data/instante lexicográfica, type/id; paginação sem snapshot global. Ver docs/API.md para semântica integral.",
+        "summary": "Agregar tarefas, eventos e publicações planejadas do usuário",
+        "description": "Janela [from,to), até 31 dias. Sem types, preserva TASK,EVENT por compatibilidade; PUBLICATION exige seleção explícita. Tarefas sem hora usam date civil no timezone do item; concluídas incluídas, canceladas/arquivadas omitidas. Eventos sobrepostos e exceções movidas usam tempos finais; canceladas omitidas. Publicações usam somente scheduledAt (ponto sem duração): owner da sessão, não arquivadas, status diferente de CANCELLED e from <= scheduledAt < to. Sem data não aparecem; publishedAt nunca é fallback. Reutiliza BE-008/009; séries inativas apenas estados salvos. Máximo 100 mestres/registros por tipo e 10000 itens na agregação/expansão, incluindo publicações no orçamento e ocorrências canceladas antes de ocultá-las; excesso 409 sem truncar. Consulta Prisma recorta publicações no banco e seleciona no máximo 101 como sentinela de excesso. Ordenação lexicográfica por data civil TASK ou instante UTC EVENT/PUBLICATION, depois type e id asc; paginação offset após agregação, sem snapshot concorrente. Chave de UI: type+id. Sem tabelas novas, duração artificial ou mutação. Ver docs/API.md.",
         "security": [
           {
             "sessionCookie": []
@@ -10792,7 +10792,8 @@
             "schema": {
               "type": "string",
               "format": "date-time"
-            }
+            },
+            "description": "Inclusivo; instante ISO com Z/offset, precisão até milissegundos, anos UTC 0001–9999; from < to, janela até 31 dias."
           },
           {
             "name": "to",
@@ -10801,7 +10802,8 @@
             "schema": {
               "type": "string",
               "format": "date-time"
-            }
+            },
+            "description": "Exclusivo; instante ISO com Z/offset, precisão até milissegundos, anos UTC 0001–9999; from < to, janela até 31 dias."
           },
           {
             "name": "types",
@@ -10812,11 +10814,23 @@
               "enum": [
                 "TASK",
                 "EVENT",
+                "PUBLICATION",
                 "TASK,EVENT",
-                "EVENT,TASK"
+                "TASK,PUBLICATION",
+                "EVENT,TASK",
+                "EVENT,PUBLICATION",
+                "PUBLICATION,TASK",
+                "PUBLICATION,EVENT",
+                "TASK,EVENT,PUBLICATION",
+                "TASK,PUBLICATION,EVENT",
+                "EVENT,TASK,PUBLICATION",
+                "EVENT,PUBLICATION,TASK",
+                "PUBLICATION,TASK,EVENT",
+                "PUBLICATION,EVENT,TASK"
               ],
               "default": "TASK,EVENT"
-            }
+            },
+            "description": "Um, dois ou três tipos distintos, separados por vírgula, sem espaços. Ordem da seleção não muda a ordenação. Padrão TASK,EVENT preservado; para todos use TASK,EVENT,PUBLICATION. Parâmetro repetido e tipos duplicados/desconhecidos retornam 400."
           },
           {
             "name": "page",
@@ -10827,7 +10841,8 @@
               "minimum": 1,
               "maximum": 10000,
               "default": 1
-            }
+            },
+            "description": "Página baseada em 1 após agregação de todos os tipos selecionados. Offset não é snapshot concorrente."
           },
           {
             "name": "limit",
@@ -10838,7 +10853,8 @@
               "minimum": 1,
               "maximum": 100,
               "default": 20
-            }
+            },
+            "description": "Até 100 itens por página; não reduz o limite de consulta por tipo, excesso continua 409."
           }
         ],
         "responses": {
@@ -10848,6 +10864,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CalendarPage"
+                },
+                "examples": {
+                  "publicationsOnly": {
+                    "summary": "Resposta de types=PUBLICATION, com janela que inclui scheduledAt",
+                    "value": {
+                      "items": [
+                        {
+                          "type": "PUBLICATION",
+                          "id": "00000000-0000-4000-8000-000000000013",
+                          "masterId": "00000000-0000-4000-8000-000000000013",
+                          "title": "Teaser planejado",
+                          "href": "/publications/00000000-0000-4000-8000-000000000013",
+                          "timezone": "America/Bahia",
+                          "ruleId": null,
+                          "version": null,
+                          "occurrenceDate": null,
+                          "recurring": false,
+                          "modified": false,
+                          "scheduledAt": "2026-11-20T15:00:00.123Z",
+                          "status": "PLANNED",
+                          "platform": "INSTAGRAM",
+                          "projectId": null
+                        }
+                      ],
+                      "page": {
+                        "number": 1,
+                        "limit": 20,
+                        "hasMore": false
+                      },
+                      "timezone": "America/Bahia"
+                    }
+                  }
                 }
               }
             }
@@ -10883,7 +10931,7 @@
             }
           },
           "409": {
-            "description": "CALENDAR_LIMIT: reduza tipos/janela ou use endpoints de domínio.",
+            "description": "CALENDAR_LIMIT: mais de 100 mestres/registros de algum tipo selecionado ou orçamento global de 10000 itens excedido. Sem resultados parciais; reduzir tipos/janela ou usar endpoints de domínio.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14652,10 +14700,18 @@
                 },
                 {
                   "$ref": "#/components/schemas/CalendarEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarPublication"
                 }
               ],
               "discriminator": {
-                "propertyName": "type"
+                "propertyName": "type",
+                "mapping": {
+                  "TASK": "#/components/schemas/CalendarTask",
+                  "EVENT": "#/components/schemas/CalendarEvent",
+                  "PUBLICATION": "#/components/schemas/CalendarPublication"
+                }
               }
             }
           },
@@ -15030,6 +15086,90 @@
             }
           }
         }
+      },
+      "CalendarPublication": {
+        "type": "object",
+        "required": [
+          "id",
+          "masterId",
+          "title",
+          "href",
+          "timezone",
+          "ruleId",
+          "version",
+          "occurrenceDate",
+          "recurring",
+          "modified",
+          "type",
+          "scheduledAt",
+          "status",
+          "platform",
+          "projectId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID estável da publicação original."
+          },
+          "masterId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID estável da publicação original."
+          },
+          "title": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string",
+            "description": "/publications/{id}; referência ao recurso original, não um evento."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Fuso da preferência do usuário autenticado para apresentação; não altera o instante UTC nem persiste fuso na publicação."
+          },
+          "ruleId": {
+            "type": "null"
+          },
+          "version": {
+            "type": "null"
+          },
+          "occurrenceDate": {
+            "type": "null"
+          },
+          "recurring": {
+            "type": "boolean",
+            "const": false
+          },
+          "modified": {
+            "type": "boolean",
+            "const": false
+          },
+          "type": {
+            "const": "PUBLICATION"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data planejada UTC com milissegundos, ponto temporal sem endAt/duração; nunca substituída por publishedAt."
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicationStatus"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PublicationPlatform"
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Projeto opcional próprio; null para publicação independente."
+          }
+        },
+        "description": "Projeção editorial mínima. Não contém ownerId, caption, notes, externalUrl, publishedAt, startAt ou endAt. Arquivadas/CANCELLED/sem scheduledAt omitidas; demais estados manuais podem aparecer, inclusive PUBLISHED.",
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
