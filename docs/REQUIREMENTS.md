@@ -1,5 +1,7 @@
 # Requisitos funcionais e regras de negócio — MVP
 
+Escopo revisto em TASK-DOC-BE-001: [MVP_SCOPE](MVP_SCOPE.md) prevalece sobre as propostas históricas; ICS/Google Calendar estão em V2 e não bloqueiam o MVP.
+
 **Referência de produto:** [`../README.md`](../README.md). Requisitos identificados para rastreabilidade; `[MVP]` é obrigatório, `[V2]` é explicitamente excluído. Dúvidas decidíveis por convenção estão registradas em `DECISIONS.md` como proposta, não como exigência já confirmada pela usuária.
 
 ## Regras transversais
@@ -28,7 +30,7 @@
 - **RF-02.1 [MVP]** CRUD com título, descrição, início, término, local/link opcional, projeto opcional e tipo genérico de compromisso (ex.: gravação, reunião).
 - **RF-02.2 [MVP]** Eventos pontuais ou recorrentes, inclusive semanais; recorrência com término opcional; exceções: cancelar ou mover ocorrência específica.
 - **RF-02.3 [MVP]** Visualização diária/semanal/mensal; filtros e vínculo opcional para notas/decupagens.
-- **RF-02.4 [MVP]** Exportação `.ics` de evento individual ou seleção e da série, com timezone e identificadores coerentes.
+- **RF-02.4 [V2 — transferido em DOC-BE-001]** Exportação `.ics` de evento individual ou seleção e da série, com timezone e identificadores coerentes.
 - **RN-E01** `end_at` deve ser posterior a `start_at`; definir comportamento para evento de dia inteiro e tempo local na Fase 2.
 - **RN-E02** Alterar somente uma ocorrência não deve sobrescrever a série.
 
@@ -87,9 +89,9 @@
 - **RF-09.2 [MVP]** Preferências de fuso, e-mail de destino, horário do resumo e habilitação/desabilitação de avisos.
 - **RN-U01** Não compartilhar credenciais de e-mail no navegador; secrets no backend; login deve ter proteção contra abuso e política de sessão.
 
-## RF-10 — Exportações
+## RF-10 — Exportações (V2)
 
-- **RF-10.1 [MVP]** Gerar `.ics` compatível com importação do Google Calendar, com `UID`, campos escapados, DTSTART/DTEND e tratamento de recorrência/exceções consistente.
+- **RF-10.1 [V2 — transferido em DOC-BE-001]** Gerar `.ics` compatível com importação do Google Calendar, com `UID`, campos escapados, DTSTART/DTEND e tratamento de recorrência/exceções consistente.
 - **RN-X01** Exportar **não** configura sincronização; mudanças posteriores na aplicação não serão refletidas automaticamente no Google Calendar.
 
 ## Requisitos não funcionais
@@ -110,5 +112,5 @@
 4. Criar gravação semanal; mover só a próxima ocorrência; a série futura permanece intacta.
 5. Criar publicação datada; aparece na agenda com status manual e sem postar em rede social.
 6. Configurar resumo diário; registro outbox é criado; despacho, fila e consumer processam no ambiente de testes; erros de envio ficam visíveis.
-7. Exportar uma gravação `.ics` e validar o conteúdo em leitor iCalendar; documentar que não há sincronização.
+7. Validar dashboard básico e preferências necessárias ao resumo diário com a API real. Exportação/importação ICS foi transferida para V2 e não faz parte deste aceite.
 8. Usuário A não acessa, associa ou altera registros do usuário B, incluindo filtros de buscas e vínculos.

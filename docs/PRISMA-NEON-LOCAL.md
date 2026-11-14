@@ -1,5 +1,13 @@
 # TASK-BE-002 — Prisma + Neon em desenvolvimento local
 
+> Nota de continuidade (TASK-DOC-BE-001): este roteiro contém o histórico do
+> bootstrap F0-07/F0-08. O estado atual está em [PROJECT_STATUS](PROJECT_STATUS.md)
+> e a política Code First em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
+> Já existem nove migrations de identidade/domínio, incluindo publicações.
+> `prisma:migrate:apply` aplica todas as migrations pendentes no alvo autorizado,
+> não apenas a tabela técnica. Não executá-lo automaticamente ou em produção;
+> agentes não precisam receber credenciais. Integração Neon continua pendente.
+
 ## Estado e escopo
 
 Base: `main` em `120c2c3` (PR #2 incorporado). Apenas configuração e validação
@@ -50,8 +58,10 @@ pelo Git e lint, mas incluído pelo compilador/bundler. Geração/validação do
 não requerem credenciais: `prisma.config.ts` só usa `DIRECT_URL` quando presente.
 A execução de migrations requer a configuração de desenvolvimento acima.
 
-A única migration versionada cria `technical_probes` com UUID, marker único e
-created_at. Não contém tabelas de domínio, dados iniciais ou comandos destrutivos.
+Na entrega original F0-08, a única migration então existente criava
+`technical_probes` com UUID, marker único e created_at, sem tabelas de domínio.
+Essa descrição é histórica: a lista atual inclui identidade e CRUDs, conforme
+PROJECT_STATUS. Revisar todas as migrations pendentes antes de aplicar.
 
 ```bash
 # Somente após conferir a branch Neon de desenvolvimento autorizada:

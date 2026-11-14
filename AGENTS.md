@@ -1,24 +1,33 @@
 # AGENTS.md — Projeto MAI (backend)
 
 ## Leitura obrigatória
+Comece por `docs/PROJECT_STATUS.md`, `docs/MVP_SCOPE.md`, `docs/NEXT_STEPS.md` e `docs/DEVELOPMENT_WORKFLOW.md`; são a referência central de continuidade (TASK-DOC-BE-001). Confira a main atual e evidências, não apenas checkboxes.
+
 Leia antes de modificar código: `README.md`, `README-CODEX-SETUP.md`, `docs/REPO_NOTES.md`, `docs/REQUIREMENTS.md`, `docs/BACKLOG.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/API.md`, `docs/DECISIONS.md`, `docs/TESTING.md`. Em UI, leia `STYLE.md`.
 
 ## Escopo e stack imutáveis
 - Repositório atual: **backend**, separado do outro repositório do projeto MAI.
 - Frontend React + Vite + TypeScript hospedado na **Vercel**; backend Express + TypeScript hospedado em **Cloudflare Workers**.
 - PostgreSQL Neon + Prisma; DTOs Zod; cron + transaction_outbox + Cloudflare Queues; sem BullMQ/Redis.
-- E-mails por Gmail via adaptador, sem retentativa automática de envio no MVP. Exportação Google Calendar apenas `.ics`.
+- E-mails por Gmail via adaptador, sem retentativa automática de envio no MVP. ICS e toda integração Google Calendar ficam em V2; não são gate do MVP.
 - Nunca converter Express para Hono/Next sem aprovação do mantenedor.
 
 ## Fluxo de execução para Codex
-1. Trabalhar **somente** na tarefa informada por ID em `docs/BACKLOG.md`; verificar dependências e código existente. Não executar tickets futuros automaticamente.
+1. Trabalhar **somente** na tarefa informada, com ID e rastreabilidade em `docs/BACKLOG.md`/`docs/NEXT_STEPS.md`; verificar dependências e código existente. Não executar tickets futuros automaticamente.
 2. Descrever plano sucinto, implementar o necessário e atualizar testes/docs. Seguir `docs/prompts/FEATURE_TEMPLATE.md`.
 3. Sempre verificar lint, typecheck, testes e build. Não alegar execução de checks não rodados; registrar bloqueios reais.
-4. Criar branch `codex/<ID>-<slug>` e preparar PR apontado para a branch principal, se ambiente/permissões permitirem. Não presumir que o agente tem permissão para abrir PR automaticamente. Se a UI exigir publicação manual, preparar a alteração e pedir somente a ação final de criação do PR.
+4. Usar o nome de branch solicitado pelo ticket; na ausência, criar `codex/<ID>-<slug>`. Preparar PR apontado para a branch principal, se ambiente/permissões permitirem. Não presumir que o agente tem permissão para abrir PR automaticamente. Se a UI exigir publicação manual, preparar a alteração e pedir somente a ação final de criação do PR.
 5. Incluir no PR: ticket, escopo, arquivos modificados, endpoints/migrations, testes, riscos, screenshots se UI, dependências entre repos.
 6. **Nunca fazer merge, force push na main, liberar deploy produção nem aplicar migrations no banco de produção.**
 7. Não criar serviços pagos, publicar dados de usuário, alterar segredos, mudar ambiente de produção ou introduzir permissões ampliadas sem aprovação humana.
 8. Nunca registrar credenciais em código, markdown, outputs, snapshots ou testes.
+
+## Estratégia de desenvolvimento
+- Code First: entregar código completo, contrato OpenAPI, testes isolados e migrations versionadas quando aplicável. Não exigir nem solicitar credenciais Neon aos agentes.
+- Validação real com Neon ocorre posteriormente na máquina do desenvolvedor; registrar como pendente até haver evidência. Mocks/HTTP simulado/workerd local não comprovam persistência real.
+- Backend/frontend usam repos e ambientes Codex separados; trabalho paralelo segue dependências de contrato, com branches/PRs próprios e merge manual pelo mantenedor.
+- Conventional Commits, PR para main e sem deploy automático. Testes essenciais continuam obrigatórios; não criar migrations nem alterar funcionalidades em tarefas documentais.
+- Interface: preservar #315CFD, Montserrat/Inter e componentes existentes. shadcn/ui e skills estão em avaliação; nenhuma migração visual foi aprovada.
 
 ## Regras de domínio essenciais
 - Tarefas são concluíveis; eventos são compromissos; ambas aparecem na agenda junto com publicações.

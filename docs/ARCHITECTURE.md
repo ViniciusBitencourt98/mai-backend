@@ -13,7 +13,13 @@
 
 A Cloudflare mantém tutorial oficial de **Express em Workers**: https://developers.cloudflare.com/workers/tutorials/deploy-an-express-app/ . Compatibilidade de Node depende da `compatibility_date` e de módulos usados: https://developers.cloudflare.com/workers/configuration/compatibility-flags/ . A validação deve usar build + deploy de verdade, não só execução local. Para datas atuais, verificar flags recomendadas — não copiar cegamente tutoriais antigos.
 
-**Gate:** antes dos CRUDs, demonstrar em ambiente remoto `/health`, uma rota Express autenticável, query e transação do Prisma em Neon, acesso a secrets, Cron, publicação/consumo Queues. Testar biblioteca de e-mail isolada e rota de falha controlada. Se algum componente falhar, documentar no ADR, propor alternativas e obter decisão explícita antes da troca de stack.
+**Política vigente (TASK-DOC-BE-001):** implementar Code First preservando esta
+stack, sem exigir credenciais Neon nos agentes. A validação real Express/Workers →
+Prisma → Neon, Cron/Queues e e-mail permanece necessária e pendente; não é
+comprovada por mocks. O gate remoto original não impede recortes de código com
+testes isolados. Validar os fluxos essenciais localmente na máquina do desenvolvedor
+e publicar somente mediante ação explícita posterior do mantenedor. Ver
+[workflow](DEVELOPMENT_WORKFLOW.md) e [estado](PROJECT_STATUS.md).
 
 ## Visão de componentes
 
@@ -59,7 +65,7 @@ Decidir provedor/método na primeira fase (documentar em `DECISIONS.md`). Prefer
 
 ## Recorrência e calendários
 
-Usar modelo explícito `recurrence_rule` com timezone e tabela de exceções/overrides. Expandir ocorrências **em uma janela solicitada** com limites de quantidade. Mudanças da série devem invalidar lembretes afetados. Separar instantes (UTC) de datas locais e timecodes de vídeo. `.ics` é exportação e não sync. Considerar RFC 5545 e decidir representação compatível de RRULE/RECURRENCE-ID.
+Usar modelo explícito `recurrence_rule` com timezone e tabela de exceções/overrides. Expandir ocorrências **em uma janela solicitada** com limites de quantidade. Mudanças da série devem invalidar lembretes afetados. Separar instantes (UTC) de datas locais e timecodes de vídeo. ICS e integração Google Calendar ficam em V2 (MVP_SCOPE); eventual exportação não é sync. Decisões de RFC 5545 ficam para o ticket futuro.
 
 ## Transactional Outbox
 
