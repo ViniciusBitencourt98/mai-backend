@@ -38,7 +38,7 @@ Este documento guia modelagem e relacionamentos; **não é um schema Prisma pron
 
 **Tarefa:** `PENDING → IN_PROGRESS → COMPLETED`; `PENDING/IN_PROGRESS → CANCELLED`; possível reabertura mediante regra e invalidação dos lembretes anteriores.
 
-**Publicação:** `IDEA → PLANNED → IN_PRODUCTION → READY → SCHEDULED → PUBLISHED`, com mudanças manuais; sugerir reduzir estados após validação com usuária.
+**Publicação (TASK-BE-012):** `IDEA`, `PLANNED`, `IN_PRODUCTION`, `READY`, `PUBLISHED`, `CANCELLED`; transições manuais livres. A proposta inicial SCHEDULED foi reduzida a PLANNED + scheduledAt conforme [ADR-004](ADR-004-EDITORIAL-PUBLICATIONS.md).
 
 **Outbox:** `PENDING → RESERVED → PUBLISHED → SENT`, ou `FAILED/CANCELLED`; `PUBLISHED` significa fila aceitou, `SENT` significa provedor aceitou. Falha para intervenção manual.
 
@@ -180,3 +180,22 @@ regra ou upsert de exceção na mesma transação. Leituras limitadas a 100 vers
 destas para exceções (nenhum endpoint exclui evento). Migration
 20261113000800_events versionada, não aplicada; validar em desenvolvimento antes
 de produção. Rollback perde eventos/exceções e exige backup/decisão.
+
+
+## Publicações editoriais — TASK-BE-012
+
+Publication/publications: UUID, title VARCHAR(200), caption/notes TEXT nullable,
+enums PublicationPlatform/PublicationFormat obrigatórios, PublicationStatus com
+padrão IDEA; scheduled_at/published_at opcionais TIMESTAMPTZ(3), external_url
+VARCHAR(2000) nullable, owner_id obrigatório e project_id opcional. Auditoria
+created_at/updated_at e arquivo archived_at TIMESTAMPTZ(3).
+
+FK para users RESTRICT e FK composta (project_id,owner_id) para projects(id,owner_id)
+RESTRICT preservam ownership e impedem cascata de projeto. Índices com owner_id:
+(archived_at,scheduled_at), (scheduled_at), (updated_at), (platform,scheduled_at),
+(format,scheduled_at), (status,scheduled_at) e (project_id). Campos de texto são
+limitados pelo DTO; busca literal case-insensitive inicial, sem novo motor de busca.
+
+Migration 20261114000100_publications aditiva, não aplicada. Enums, decisões de
+datas/status, extensão do catálogo e rollback em ADR-004. Integração Neon real e
+validação das FKs/índices permanecem pendentes. Nenhuma mudança em /calendar.

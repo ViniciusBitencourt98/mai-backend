@@ -1,3 +1,5 @@
+import { createPublicationScope } from '../infra/database/publication-scope';
+import type { PublicationDependencies } from './publication.service';
 import { createCalendarScope } from '../infra/database/calendar-scope';
 import type { CalendarDependencies } from './calendar.service';
 import { createEventScope } from '../infra/database/event-scope';
@@ -23,14 +25,15 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const auth: AuthDependencies = { run: createAuthScope(bindings), settings: authSettings(bindings),
     ...(clientAddress ? { clientAddress } : {}) };
   const projects: ProjectDependencies = { run: createProjectScope(bindings) };
+  const publications: PublicationDependencies = { run: createPublicationScope(bindings) };
   const notes: NoteDependencies = { run: createNoteScope(bindings) };
   const decupages: DecupageDependencies = { run: createDecupageScope(bindings) };
   const tasks: TaskDependencies = { run: createTaskScope(bindings) };
   const recurrence: RecurrenceDependencies = { run: createRecurrenceScope(bindings) };
   const events: EventDependencies = { run: createEventScope(bindings) };
   const calendar:CalendarDependencies={run:createCalendarScope(bindings)};
-  return { calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  return { publications, calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar'> & { projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar' | 'publications'> & { publications?: PublicationDependencies; projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };

@@ -210,3 +210,12 @@ aplicada. Conforme decisão do mantenedor, Neon e runtime completo com banco nã
 foram executados; 13 testes externos continuam skipped. Não marcar o gate integrado
 como concluído. Relatório e roteiro de execução futura em
 [F3-BACKEND-NEON-VALIDATION.md](F3-BACKEND-NEON-VALIDATION.md).
+
+
+## TASK-BE-012 — publicações editoriais, recorte Code First
+
+F4-01/F4-02 preparados para revisão: ADR-004, Publication, migration aditiva,
+seis endpoints /publications, DTOs, ownership/CSRF, filtros/paginação e OpenAPI.
+Sem aplicação de migrations, credenciais Neon, postagem externa, aprovação, telas,
+calendário ou notificações. Integração Neon/constraints e gates remotos pendentes;
+não marcar tickets completos antes da revisão e validação autorizada.

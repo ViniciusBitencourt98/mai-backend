@@ -508,3 +508,51 @@ de domínio para conjuntos maiores. Limites próprios dos serviços continuam v�
 401 sem sessão, 400 query, 409 limites, 500 interno/503 serviço não configurado;
 403 CORS se Origin proibida. Cache-Control no-store, CORS com credenciais. Sem
 migrations/schema novos, publicações, dashboard, ICS, UI ou notificações.
+
+
+## Publicações editoriais — TASK-BE-012
+
+Contrato implementado em `/publications` (sem `/api/v1` e sem DELETE); substitui
+o esboço editorial do catálogo inicial. [OpenAPI](openapi.json) detalha os DTOs,
+exemplos, enums, filtros, paginação, autenticação/CSRF e erros.
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET/POST | `/publications` | 200 PublicationPage / 201 Publication + Location |
+| GET/PATCH | `/publications/:id` | 200 Publication |
+| POST | `/publications/:id/archive` e `/restore` | 200 Publication |
+
+POST exige title (trim, 1–200), platform e format. Plataformas: INSTAGRAM, TIKTOK,
+YOUTUBE, FACEBOOK, LINKEDIN, OTHER. Formatos: SHORT_VIDEO, LONG_VIDEO, REELS, STORIES,
+CAROUSEL, IMAGE, TEXT, OTHER, sem matriz de combinações. Status padrão IDEA; aceita
+PLANNED, IN_PRODUCTION, READY, PUBLISHED, CANCELLED. Transições manuais livres,
+sem aprovação/postagem externa; scheduledAt não agenda em rede. Ver ADR-004.
+
+caption/notes opcionais nullable (até 50.000), externalUrl opcional nullable HTTP(S)
+até 2.000; projectId opcional/null próprio, inclusive projeto arquivado. scheduledAt
+e publishedAt são instantes opcionais/null, ISO com Z/offset, até milissegundos,
+anos UTC 0001–9999, resposta UTC. Não há regra obrigando publishedAt em PUBLISHED;
+nenhuma edição/status gera ou limpa essa data automaticamente. Ausência em PATCH
+preserva; null remove opcionais. IDs/ownerId/auditoria são somente leitura e
+rejeitados em entradas. Retorno inclui todos os campos e nulls, além de id,ownerId,
+createdAt,updatedAt,archivedAt. Projeto pode ser removido sem perda dos demais dados.
+
+GET lista page=1 (até 1.000.000), limit=20 (1–100), q substring literal de título
+case-insensitive com trim até 200, platform,format,status,projectId,from,to,
+includeArchived=false,sort=scheduledAt|updatedAt,order=asc|desc (padrão scheduledAt
+asc, nulls sempre no fim, UUID asc no desempate). Intervalo planejado [from,to),
+from inclusivo/to exclusivo e from < to quando ambos presentes; um limite sozinho
+é aceito, registros sem scheduledAt ficam fora de qualquer intervalo. Filtros AND;
+projeto externo/inexistente retorna lista vazia. Query estrita rejeita parâmetros
+repetidos/desconhecidos. Retorno `{items:Publication[],page:{number,limit,hasMore}}`;
+no máximo limit itens. Offset não garante snapshot entre páginas concorrentes.
+
+Arquivo/restauração sem corpo ou {} são idempotentes e preservam status, datas e
+vínculos. Arquivadas consultáveis/editáveis, omitidas da lista por padrão. Sem
+exclusão definitiva, conversão em evento, postagem social ou modificação de /calendar.
+
+Sessão em todos os endpoints; Origin confiável e X-CSRF-Token em todas as mutações.
+CORS com credenciais, Cache-Control no-store e X-Request-Id. Erros padronizados:
+400 VALIDATION_ERROR/INVALID_JSON, 401 UNAUTHENTICATED, 403 CORS/CSRF, 404 NOT_FOUND
+para publicação/projeto ausente ou externo, 413 corpo >100 KiB, 415 exige JSON
+em POST/PATCH, 500 INTERNAL_ERROR sanitizado, 503 serviço não configurado.
