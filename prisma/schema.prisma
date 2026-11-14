@@ -33,6 +33,7 @@ model User {
   events       Event[]
   tasks        Task[]
   notes        Note[]
+  publications Publication[]
   decupages    Decupage[]
 
   @@map("users")
@@ -97,6 +98,7 @@ model Project {
   tasks       Task[]
   events      Event[]
   notes       Note[]
+  publications Publication[]
   decupages   Decupage[]
   @@unique([id, ownerId])
   @@map("projects")
@@ -338,4 +340,63 @@ model EventException {
  @@id([ruleId,date])
  @@index([ruleId,startAt,endAt])
  @@map("event_exceptions")
+}
+
+
+enum PublicationPlatform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  LINKEDIN
+  OTHER
+}
+
+enum PublicationFormat {
+  SHORT_VIDEO
+  LONG_VIDEO
+  REELS
+  STORIES
+  CAROUSEL
+  IMAGE
+  TEXT
+  OTHER
+}
+
+enum PublicationStatus {
+  IDEA
+  PLANNED
+  IN_PRODUCTION
+  READY
+  PUBLISHED
+  CANCELLED
+}
+
+model Publication {
+  id          String @id @default(uuid()) @db.Uuid
+  title       String @db.VarChar(200)
+  caption     String?
+  platform    PublicationPlatform
+  format      PublicationFormat
+  status      PublicationStatus @default(IDEA)
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz(3)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
+  externalUrl String? @map("external_url") @db.VarChar(2000)
+  notes       String?
+  projectId   String? @map("project_id") @db.Uuid
+  ownerId     String @map("owner_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(3)
+  owner       User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  project     Project? @relation(fields: [projectId, ownerId], references: [id, ownerId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ownerId, archivedAt, scheduledAt])
+  @@index([ownerId, scheduledAt])
+  @@index([ownerId, updatedAt])
+  @@index([ownerId, platform, scheduledAt])
+  @@index([ownerId, format, scheduledAt])
+  @@index([ownerId, status, scheduledAt])
+  @@index([ownerId, projectId])
+  @@map("publications")
 }

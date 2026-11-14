@@ -10914,6 +10914,1050 @@
           }
         }
       }
+    },
+    "/publications": {
+      "get": {
+        "summary": "Listar publicações próprias",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar. Filtros combinados por AND; intervalo semiaberto [from,to). Query estrita: parâmetros desconhecidos/repetidos rejeitados. Paginação offset sem snapshot concorrente. Instantes normalizados UTC (anos 0001–9999).",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Página baseada em 1; offset."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Limite máximo 100; hasMore informa outra página."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Substring literal de título, trim e case-insensitive; %/_ não são curingas."
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PublicationPlatform"
+            },
+            "description": "Uma plataforma exata."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PublicationFormat"
+            },
+            "description": "Um formato exato."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PublicationStatus"
+            },
+            "description": "Um estado exato."
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Publicações próprias desse projeto; projeto inexistente/externo retorna lista vazia."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Limite inferior inclusivo de scheduledAt (com Z/offset, até milissegundos). Omite publicações sem data."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Limite superior exclusivo de scheduledAt. Exige from < to se ambos presentes; não usa publishedAt."
+          },
+          {
+            "name": "includeArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Somente true/false; true inclui arquivadas."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduledAt",
+                "updatedAt"
+              ],
+              "default": "scheduledAt"
+            },
+            "description": "Data planejada ou atualização; scheduledAt null sempre no fim. Desempate UUID asc."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "description": "Direção da ordenação primária; nulls continuam no fim."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "00000000-0000-4000-8000-000000000012",
+                      "ownerId": "00000000-0000-4000-8000-000000000001",
+                      "title": "Teaser do projeto",
+                      "caption": null,
+                      "platform": "INSTAGRAM",
+                      "format": "REELS",
+                      "status": "PLANNED",
+                      "scheduledAt": "2026-11-20T15:00:00.000Z",
+                      "publishedAt": null,
+                      "externalUrl": null,
+                      "notes": null,
+                      "projectId": null,
+                      "createdAt": "2026-11-14T12:00:00.000Z",
+                      "updatedAt": "2026-11-14T12:00:00.000Z",
+                      "archivedAt": null
+                    }
+                  ],
+                  "page": {
+                    "number": 1,
+                    "limit": 20,
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar publicação editorial",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Publicação criada; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "/publications/{id}"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000012",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Teaser do projeto",
+                  "caption": null,
+                  "platform": "INSTAGRAM",
+                  "format": "REELS",
+                  "status": "PLANNED",
+                  "scheduledAt": "2026-11-20T15:00:00.000Z",
+                  "publishedAt": null,
+                  "externalUrl": null,
+                  "notes": null,
+                  "projectId": null,
+                  "createdAt": "2026-11-14T12:00:00.000Z",
+                  "updatedAt": "2026-11-14T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: publicação ou projeto inexistente ou externo, indistinguíveis; nenhum dado externo é exposto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePublication"
+              },
+              "example": {
+                "title": "Teaser do projeto",
+                "platform": "INSTAGRAM",
+                "format": "REELS",
+                "status": "PLANNED",
+                "scheduledAt": "2026-11-20T12:00:00-03:00"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/publications/{id}": {
+      "get": {
+        "summary": "Consultar publicação própria, inclusive arquivada",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000012",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Teaser do projeto",
+                  "caption": null,
+                  "platform": "INSTAGRAM",
+                  "format": "REELS",
+                  "status": "PLANNED",
+                  "scheduledAt": "2026-11-20T15:00:00.000Z",
+                  "publishedAt": null,
+                  "externalUrl": null,
+                  "notes": null,
+                  "projectId": null,
+                  "createdAt": "2026-11-14T12:00:00.000Z",
+                  "updatedAt": "2026-11-14T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: publicação ou projeto inexistente ou externo, indistinguíveis; nenhum dado externo é exposto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar publicação e/ou status manual",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000012",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Teaser do projeto",
+                  "caption": null,
+                  "platform": "INSTAGRAM",
+                  "format": "REELS",
+                  "status": "PLANNED",
+                  "scheduledAt": "2026-11-20T15:00:00.000Z",
+                  "publishedAt": null,
+                  "externalUrl": null,
+                  "notes": null,
+                  "projectId": null,
+                  "createdAt": "2026-11-14T12:00:00.000Z",
+                  "updatedAt": "2026-11-14T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: publicação ou projeto inexistente ou externo, indistinguíveis; nenhum dado externo é exposto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPublication"
+              },
+              "example": {
+                "status": "PUBLISHED",
+                "publishedAt": "2026-11-20T15:04:00Z",
+                "externalUrl": "https://example.invalid/post/123"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/publications/{id}/archive": {
+      "post": {
+        "summary": "Arquivar publicação",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000012",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Teaser do projeto",
+                  "caption": null,
+                  "platform": "INSTAGRAM",
+                  "format": "REELS",
+                  "status": "PLANNED",
+                  "scheduledAt": "2026-11-20T15:00:00.000Z",
+                  "publishedAt": null,
+                  "externalUrl": null,
+                  "notes": null,
+                  "projectId": null,
+                  "createdAt": "2026-11-14T12:00:00.000Z",
+                  "updatedAt": "2026-11-14T12:00:00.000Z",
+                  "archivedAt": "2026-11-14T13:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: publicação ou projeto inexistente ou externo, indistinguíveis; nenhum dado externo é exposto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Sem corpo ou objeto JSON vazio; rejeita campos extras.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/publications/{id}/restore": {
+      "post": {
+        "summary": "Restaurar publicação",
+        "tags": [
+          "Publications"
+        ],
+        "description": "Sessão obrigatória; Cache-Control: no-store e X-Request-Id. Owner vem exclusivamente da sessão. Mutações exigem Origin confiável e X-CSRF-Token. Arquivo/restauração idempotentes preservam status, conteúdo, projeto e datas; registros arquivados são consultáveis/editáveis. Sem DELETE, postagem automática, aprovação, API externa ou alteração de /calendar.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso; Cache-Control: no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000012",
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "title": "Teaser do projeto",
+                  "caption": null,
+                  "platform": "INSTAGRAM",
+                  "format": "REELS",
+                  "status": "PLANNED",
+                  "scheduledAt": "2026-11-20T15:00:00.000Z",
+                  "publishedAt": null,
+                  "externalUrl": null,
+                  "notes": null,
+                  "projectId": null,
+                  "createdAt": "2026-11-14T12:00:00.000Z",
+                  "updatedAt": "2026-11-14T12:00:00.000Z",
+                  "archivedAt": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR ou INVALID_JSON: campos, UUID, filtros, query ou corpo inválidos; campos desconhecidos rejeitados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente, inválida, expirada ou revogada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: publicação ou projeto inexistente ou externo, indistinguíveis; nenhum dado externo é exposto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Sem corpo ou objeto JSON vazio; rejeita campos extras.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13639,6 +14683,351 @@
           },
           "timezone": {
             "type": "string"
+          }
+        }
+      },
+      "PublicationPlatform": {
+        "type": "string",
+        "enum": [
+          "INSTAGRAM",
+          "TIKTOK",
+          "YOUTUBE",
+          "FACEBOOK",
+          "LINKEDIN",
+          "OTHER"
+        ],
+        "description": "Plataforma editorial manual. OTHER permite classificar outras redes; novos valores podem ser adicionados em migration/DTO/contrato."
+      },
+      "PublicationFormat": {
+        "type": "string",
+        "enum": [
+          "SHORT_VIDEO",
+          "LONG_VIDEO",
+          "REELS",
+          "STORIES",
+          "CAROUSEL",
+          "IMAGE",
+          "TEXT",
+          "OTHER"
+        ],
+        "description": "Formato editorial; não há matriz obrigatória plataforma/formato no MVP."
+      },
+      "PublicationStatus": {
+        "type": "string",
+        "enum": [
+          "IDEA",
+          "PLANNED",
+          "IN_PRODUCTION",
+          "READY",
+          "PUBLISHED",
+          "CANCELLED"
+        ],
+        "description": "Estado manual: ideia, planejado, em produção, pronto, publicado, cancelado. Transições livres e explícitas, sem aprovação nem postagem externa. PLANNED com scheduledAt representa planejamento, não agendamento na rede."
+      },
+      "CreatePublication": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "platform",
+          "format"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; rejeita somente espaços."
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Legenda/descrição em texto simples. Null limpa; não interpretar como HTML.",
+            "default": null
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PublicationPlatform"
+          },
+          "format": {
+            "$ref": "#/components/schemas/PublicationFormat"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicationStatus",
+            "default": "IDEA"
+          },
+          "scheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data planejada opcional, independente do status; preparada para futura projeção no calendário.",
+            "default": null
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data efetiva informada manualmente; nenhuma mudança de status cria, limpa ou sobrescreve este campo. Pode ser omitida mesmo em PUBLISHED.",
+            "default": null
+          },
+          "externalUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "maxLength": 2000,
+            "description": "URL externa HTTP(S) válida; apenas referência, sem requisição ao destino. Null limpa.",
+            "default": null
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Observações em texto simples; null limpa.",
+            "default": null
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Zero ou um projeto próprio, inclusive arquivado; null desvincula sem perda dos demais campos.",
+            "default": null
+          }
+        }
+      },
+      "PatchPublication": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; rejeita somente espaços."
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Legenda/descrição em texto simples. Null limpa; não interpretar como HTML."
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PublicationPlatform"
+          },
+          "format": {
+            "$ref": "#/components/schemas/PublicationFormat"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicationStatus"
+          },
+          "scheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data planejada opcional, independente do status; preparada para futura projeção no calendário."
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data efetiva informada manualmente; nenhuma mudança de status cria, limpa ou sobrescreve este campo. Pode ser omitida mesmo em PUBLISHED."
+          },
+          "externalUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "maxLength": 2000,
+            "description": "URL externa HTTP(S) válida; apenas referência, sem requisição ao destino. Null limpa."
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Observações em texto simples; null limpa."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Zero ou um projeto próprio, inclusive arquivado; null desvincula sem perda dos demais campos."
+          }
+        },
+        "description": "Ausência preserva; null limpa opcionais. ownerId, id e auditoria não são aceitos. Status é manual e não altera publishedAt."
+      },
+      "Publication": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "caption",
+          "platform",
+          "format",
+          "status",
+          "scheduledAt",
+          "publishedAt",
+          "externalUrl",
+          "notes",
+          "projectId",
+          "id",
+          "ownerId",
+          "createdAt",
+          "updatedAt",
+          "archivedAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Trim; rejeita somente espaços."
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Legenda/descrição em texto simples. Null limpa; não interpretar como HTML."
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PublicationPlatform"
+          },
+          "format": {
+            "$ref": "#/components/schemas/PublicationFormat"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicationStatus"
+          },
+          "scheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data planejada opcional, independente do status; preparada para futura projeção no calendário."
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Instante ISO 8601 com Z ou offset, precisão até milissegundos, anos UTC 0001–9999. Resposta UTC; null remove o instante. Data efetiva informada manualmente; nenhuma mudança de status cria, limpa ou sobrescreve este campo. Pode ser omitida mesmo em PUBLISHED."
+          },
+          "externalUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "maxLength": 2000,
+            "description": "URL externa HTTP(S) válida; apenas referência, sem requisição ao destino. Null limpa."
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50000,
+            "description": "Observações em texto simples; null limpa."
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Zero ou um projeto próprio, inclusive arquivado; null desvincula sem perda dos demais campos."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          }
+        }
+      },
+      "PublicationPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/Publication"
+            }
+          },
+          "page": {
+            "type": "object",
+            "required": [
+              "number",
+              "limit",
+              "hasMore"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            }
           }
         }
       }

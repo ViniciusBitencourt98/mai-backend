@@ -1,3 +1,4 @@
+import { createPublicationRouter } from './routes/publication.routes';
 import { createCalendarRouter } from './routes/calendar.routes';
 import { createEventRouter } from './routes/event.routes';
 import { createRecurrenceRouter } from './routes/recurrence.routes';
@@ -29,6 +30,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(healthRouter);
   app.use('/auth', createAuthRouter(options.services?.auth));
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
+  app.use('/publications', createPublicationRouter(options.services?.auth, options.services?.publications));
   app.use('/notes', createNoteRouter(options.services?.auth, options.services?.notes));
   app.use('/decupages', createDecupageRouter(options.services?.auth, options.services?.decupages));
   app.use('/tasks', createRecurrenceRouter(options.services?.auth, options.services?.recurrence));

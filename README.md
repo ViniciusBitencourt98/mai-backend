@@ -149,3 +149,12 @@ ou usuária de teste é criada pela aplicação. Sem banco, /health continua dis
 mas login persistente depende de aplicar as migrations em desenvolvimento.
 Os testes isolados não comprovam persistência real; Neon e Cloudflare remoto
 continuam pendentes. Não execute migrations ou bootstrap em produção.
+
+
+## Publicações editoriais (TASK-BE-012)
+
+`/publications` oferece criação, consulta, edição/status manual, arquivo/restauração
+e filtros paginados, com sessão/CSRF e projeto opcional próprio. Contrato em
+[API](docs/API.md), [OpenAPI](docs/openapi.json) e decisões em
+[ADR-004](docs/ADR-004-EDITORIAL-PUBLICATIONS.md). Migration versionada, não aplicada;
+integração Neon pendente. Não publica em redes sociais nem altera `/calendar`.

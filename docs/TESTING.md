@@ -164,3 +164,39 @@ versão/exceção e reordenação; rollback PostgreSQL continua pendente.
 Inventário dos 13 testes, cobertura, diferenças de contrato, migrations revisadas
 e sequência de execução local em
 [F3-BACKEND-NEON-VALIDATION.md](F3-BACKEND-NEON-VALIDATION.md).
+
+## TASK-BE-012 — publicações editoriais
+
+74 testes isolados em tests/publications/publications.test.ts: criação/edição,
+seis plataformas, oito formatos, seis estados manuais, datas com offset/UTC e
+limites, publishedAt preservado nas edições/status/arquivo e removido só por null
+explícito; projeto opcional próprio, desvinculação, arquivo/restauração idempotentes,
+filtros AND, intervalo planejado [from,to), nulls no fim, paginação, entrada estrita,
+ownerId somente da sessão, autenticação nos seis endpoints, CSRF/Origin em todas
+as mutações, CORS com credenciais, limite de corpo e mídia JSON. Mocks Prisma
+verificam os predicados reais, escopo ownerId, ordenação, filtros/escape de pesquisa,
+paginação, timestamps de arquivo condicionais e mapeamento de FK. Não comprovam
+persistência, concorrência nem constraints PostgreSQL.
+
+Validação nesta entrega: lint e typecheck passaram; 392 testes em 22 arquivos
+passaram, zero skips na suíte local (inclui workerd). Build Wrangler dry-run passou,
+sem upload. Smoke em workerd local: GET /publications sem sessão retorna 401.
+OpenAPI 3.1 validado para os seis endpoints e schemas referenciados; dez exemplos
+de request/response validados com JSON Schema e formatos.
+
+A validação do documento OpenAPI completo detectou respostas antigas de /decupages
+sem description obrigatória (defeito preexistente, fora do módulo editorial).
+Os novos endpoints não têm esse erro; correção do contrato legado fica pendente,
+sem alteração no comportamento/contratos dos outros módulos nesta tarefa.
+
+Prisma Client regenerado pelas APIs oficiais in-process 7.10.1, conforme
+PRISMA-NEON-LOCAL.md. A geração CLI padrão ainda falha com 403 no checksum de
+binaries.prisma.sh; nenhum checksum/TLS foi desativado. Dependências e lockfile
+inalterados. Migration 20261114000100_publications apenas versionada, não aplicada.
+
+Integração Neon de publicações permanece pendente: criar/ler por clients separados,
+valores de enums, FK composta rejeitando projeto externo, filtros PostgreSQL,
+ordenação de nulos/paginação, datas e arquivo concorrente. Os 13 testes externos
+existentes não foram executados nesta tarefa. Não houve solicitação de credenciais,
+migration em banco real, bootstrap, deploy ou postagem em rede social. Mocks não
+substituem a validação integrada futura e /calendar não foi modificado.

@@ -13,7 +13,7 @@
 - ADR-001: proposta implementada para revisão no PR F1-01–F1-04: [sessões opacas, PBKDF2 e CSRF](ADR-001-AUTHENTICATION.md). A aprovação final cabe ao mantenedor.
 - ADR-002: cardinalidade dos vínculos entre notas, eventos e projetos (F2-04).
 - ADR-003: datas sem hora e regras de recorrência/exceções (F3-01).
-- ADR-004: statuses do calendário editorial (F4-01).
+- ADR-004: [publicações e estados editoriais](ADR-004-EDITORIAL-PUBLICATIONS.md), proposta implementada para revisão em TASK-BE-012 (F4-01/F4-02).
 - ADR-005: método Gmail após prova de conceito (F0-11).
 
 O agente deve propor ADR em PR; não deve decidir silenciosamente mudanças de stack, infraestrutura paga ou mecanismos de acesso.
