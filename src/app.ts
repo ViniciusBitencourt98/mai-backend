@@ -1,3 +1,4 @@
+import {createReminderRouter} from './routes/reminder.routes';
 import { createPreferencesRouter } from './routes/preferences.routes';
 import { createDashboardRouter } from './routes/dashboard.routes';
 import { createPublicationRouter } from './routes/publication.routes';
@@ -31,6 +32,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(express.json({ limit: '100kb' }));
   app.use(healthRouter);
   app.use('/me/preferences', createPreferencesRouter(options.services?.auth, options.services?.preferences));
+  app.use('/reminders',createReminderRouter(options.services?.auth,options.services?.reminders));
   app.use('/auth', createAuthRouter(options.services?.auth));
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
   app.use('/publications', createPublicationRouter(options.services?.auth, options.services?.publications));

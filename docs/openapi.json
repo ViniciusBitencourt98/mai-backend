@@ -12483,6 +12483,303 @@
           }
         }
       }
+    },
+    "/reminders/{sourceType}/{sourceId}": {
+      "get": {
+        "summary": "Consultar regra de lembrete própria",
+        "tags": [
+          "Reminders"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "description": "Somente entidade própria; owner da sessão. GET retorna rule:null sem configuração e não grava. PUT é configuração completa com leadMinutes e enabled; exige Origin/CSRF e JSON. Sem query. Sem exposição de outbox/leases/logs. Gera/revalida envios nos próximos 30 dias na mesma transação; sem e-mail/backfill. Tarefas civis usam 09:00 no fuso aplicável (BE-016). Regras desabilitadas ou emailEnabled=false não geram; dailyDigestEnabled não autoriza lembretes individuais. Limites: 100 candidatos por regra, 100 intenções vivas por regra, 1000 por dono; excesso reverte toda operação. Não há snapshot externo ou validação Neon nesta entrega.",
+        "responses": {
+          "200": {
+            "description": "Regra atual; Cache-Control no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Query, UUID, tipo, corpo/campos inválidos; não aceita ownerId, estado da outbox ou configuração parcial.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida/expirada/revogada, conta desativada ou removida (inclui nova verificação na escrita).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Origem ausente ou de outro proprietário, indistinguíveis.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NOTIFICATION_LIMIT/CONFLICT: limite de planejamento/intenção excedido; nenhuma escrita parcial.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sourceType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TASK",
+                "EVENT",
+                "PUBLICATION"
+              ]
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "put": {
+        "summary": "Configurar regra e sincronizar lembretes atomicamente",
+        "tags": [
+          "Reminders"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "description": "Somente entidade própria; owner da sessão. GET retorna rule:null sem configuração e não grava. PUT é configuração completa com leadMinutes e enabled; exige Origin/CSRF e JSON. Sem query. Sem exposição de outbox/leases/logs. Gera/revalida envios nos próximos 30 dias na mesma transação; sem e-mail/backfill. Tarefas civis usam 09:00 no fuso aplicável (BE-016). Regras desabilitadas ou emailEnabled=false não geram; dailyDigestEnabled não autoriza lembretes individuais. Limites: 100 candidatos por regra, 100 intenções vivas por regra, 1000 por dono; excesso reverte toda operação. Não há snapshot externo ou validação Neon nesta entrega.",
+        "responses": {
+          "200": {
+            "description": "Regra atual; Cache-Control no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Query, UUID, tipo, corpo/campos inválidos; não aceita ownerId, estado da outbox ou configuração parcial.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida/expirada/revogada, conta desativada ou removida (inclui nova verificação na escrita).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Origem ausente ou de outro proprietário, indistinguíveis.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NOTIFICATION_LIMIT/CONFLICT: limite de planejamento/intenção excedido; nenhuma escrita parcial.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sourceType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TASK",
+                "EVENT",
+                "PUBLICATION"
+              ]
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderSettings"
+              },
+              "example": {
+                "leadMinutes": 60,
+                "enabled": true
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -15996,6 +16293,94 @@
           }
         },
         "description": "Parcial estrito, pelo menos um campo. Ausência preserva; null rejeitado em todos os campos. Booleanos não sofrem coerção. Fuso/horário podem ser configurados com e-mail/resumo desativados. Atualização de nome/preferências é transacional."
+      },
+      "ReminderSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "leadMinutes",
+          "enabled"
+        ],
+        "properties": {
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 43200
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReminderRule": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sourceType",
+          "sourceId",
+          "leadMinutes",
+          "enabled",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "TASK",
+              "EVENT",
+              "PUBLICATION"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 43200
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReminderRuleResponse": {
+        "type": "object",
+        "required": [
+          "rule"
+        ],
+        "properties": {
+          "rule": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReminderRule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       }
     },
     "securitySchemes": {

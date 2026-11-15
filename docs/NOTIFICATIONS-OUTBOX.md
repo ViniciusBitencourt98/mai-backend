@@ -183,3 +183,17 @@ CHECKs/unique/FKs/concorrência/rollback/índices e custo SQL reais ainda precis
 Neon de desenvolvimento na máquina do desenvolvedor. Testes simulados e parser
 SQL não provam essas garantias. Sem credenciais, deploy, frontend, ICS/Google,
 WhatsApp/push ou envio real.
+
+## Atualização BE-017 — integração agora implementada em código
+
+O texto de fundação acima descreve a entrega BE-016. BE-017 implementa os hooks
+F5-03 nos scopes de tarefas/eventos/publicações/recorrência e preferências, e a API
+GET/PUT /reminders/{sourceType}/{sourceId}. Ver API.md para o contrato e limites.
+As referências anteriores a hooks futuros não significam que esta branch ainda
+os omita: alteração de domínio + invalidação/planejamento agora compartilham a
+mesma transação, com lock do usuário antes do domínio. Repositories isolados sem
+hooks são usados em testes; os scopes reais habilitam integração.
+
+Continuam futuros: varredura periódica para renovar janelas sem novas escritas,
+conteúdo/planejador de resumos, Cron, Queue e envio/ack de provedor. Nenhum destes
+componentes foi habilitado, e Neon real/rollback/concorrência seguem pendentes.

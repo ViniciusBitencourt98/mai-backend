@@ -369,3 +369,33 @@ Não houve criação de endpoints, envio, produtor de domínio integrado, Cron, 
 Gmail, resumo completo, frontend, merge ou deploy. O build/suíte existentes
 continuam validando o runtime local do backend; o futuro processamento de
 notificações em Worker/Queue conectado a banco/provedor não foi executado.
+
+## TASK-BE-017 — integração transacional de lembretes
+
+14 testes novos em tests/reminders/reminders.test.ts e http.test.ts. Cobrem
+reagendamento/invalidação/substituição/idempotência de publicação, cancelamento,
+PUBLISHED, remoção de scheduledAt, arquivo, preferência mestre distinta do resumo,
+regra desabilitada/ausente e janela vencida; facade sem nested commit e falha de
+audit que reverte estado na simulação. Recorrência cobre ocorrência concluída,
+suspensão/retomada/arquivo e exceção de evento movida com identidade original fora
+da janela civil, seguida de cancelamento. A resolução temporal/estado dos domínios
+e os testes BE-016 continuam executados junto.
+
+HTTP com AuthService/sessão e persistência isolada verifica GET/PUT, origem/CSRF,
+owner derivado da sessão, validação estrita e CORS PUT. As transações simuladas e
+mocks não demonstram rollback, bloqueios ou concorrência PostgreSQL reais.
+
+| Verificação | Resultado |
+|---|---|
+| npm run lint | Passou |
+| npm run typecheck | Passou |
+| npm test | 538 passaram em 30 arquivos, zero skips locais; 14 novos, inclui workerd |
+| npm run build | Passou, Wrangler dry-run sem upload |
+| OpenAPI 3.1, recorte de configuração e schemas referenciados | Passou; paths anteriores preservados |
+| git diff --check / links Markdown | Conferidos |
+
+Sem schema/migration nova; depende das migrations BE-015/016 já versionadas, que
+não foram aplicadas aqui. Pendentes no Neon local: atomicidade de domínio+outbox+
+log, disputas de edição/configuração/preferência/reserva, ordem de locks, timeout,
+limites e custo da janela/recorrência. Os 13 testes externos existentes não foram
+executados. Nenhuma credencial, envio, Cron, Queue, consumer, frontend ou deploy.
