@@ -436,3 +436,24 @@ arquivos passaram**, zero skips na suíte local. Inclui composição concorrente
 consumer+serviço (um aceite do provedor e um SENT com mensagens duplicadas).
 O contrato OpenAPI anterior permaneceu idêntico; novos endpoints têm segurança,
 DTOs e erros documentados. Validação externa Neon/Gmail/Cron/Queues não executada.
+
+## TASK-BE-020 — revisão e correções do fluxo (para revisão)
+
+Base main `8b740f0`, BE-019 incorporada no PR #21. Branch
+`test/BE-020-notification-hardening`. Corrigida lacuna de renovação contínua:
+Cron percorre regras com cursor persistente, lote de 20 regras, transação por
+passo e reaproveitamento do planejador/motor existente. Migration aditiva
+20261115000300_notification_renewal_cursor **não aplicada**. Corrigido folding
+RFC 2047 de assuntos MIME longos, sem dividir UTF-8. Contrato OpenAPI preservado.
+Revisão de concorrência, estados, ownership, hooks transacionais, resumo e política
+sem retry de envio registrada em [NOTIFICATION-HARDENING](NOTIFICATION-HARDENING.md),
+com achados, correções, riscos e roteiro de aceite integrado/produção. Nenhuma
+credencial, envio real, recurso remoto ou deploy. Neon/Queues/Cron/Gmail reais
+continuam pendentes; mocks não validam locks, savepoints ou rollback PostgreSQL.
+
+Validação BE-020 nesta entrega: lint e typecheck aprovados; **603 testes em 36
+arquivos** aprovados, zero skips locais (8 regressões novas). Build Wrangler
+dry-run aprovado, sem upload. Prisma Client regenerado com APIs oficiais 7.10.1,
+sem desativar TLS/checksum e sem alterar dependências/lockfile. OpenAPI anterior
+idêntico à main; segurança e respostas das notificações conferidas. git diff
+--check aprovado. Infraestrutura externa e migration real não executadas.

@@ -1,5 +1,20 @@
 # Próximas entregas e dependências
 
+## TASK-BE-020 — revisão e correções do fluxo (para revisão)
+
+Base main `8b740f0`, BE-019 incorporada no PR #21. Branch
+`test/BE-020-notification-hardening`. Corrigida lacuna de renovação contínua:
+Cron percorre regras com cursor persistente, lote de 20 regras, transação por
+passo e reaproveitamento do planejador/motor existente. Migration aditiva
+20261115000300_notification_renewal_cursor **não aplicada**. Corrigido folding
+RFC 2047 de assuntos MIME longos, sem dividir UTF-8. Contrato OpenAPI preservado.
+Revisão de concorrência, estados, ownership, hooks transacionais, resumo e política
+sem retry de envio registrada em [NOTIFICATION-HARDENING](NOTIFICATION-HARDENING.md),
+com achados, correções, riscos e roteiro de aceite integrado/produção. Nenhuma
+credencial, envio real, recurso remoto ou deploy. Neon/Queues/Cron/Gmail reais
+continuam pendentes; mocks não validam locks, savepoints ou rollback PostgreSQL.
+
+
 ## TASK-BE-019 — entrega por e-mail, resumo e histórico (para revisão)
 
 Base main `5e7b3aa` (BE-018, PR #20). Branch `feat/BE-019-email-delivery-digest`.
