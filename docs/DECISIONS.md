@@ -243,3 +243,16 @@ conservadora por timestamp pode substituir intenções após toque de metadados,
 sem duplicar intenções vivas. Falhas/limites abortam toda escrita, não retornam
 sucesso parcial. Nenhum retry automático ou envio foi habilitado. Não há schema
 novo; validação transacional/concorrência/custos em Neon permanece pendente.
+
+
+## BE-018 — refinamento O-10: recuperação de infraestrutura antes do envio
+
+O ticket autoriza separar falha técnica de publicação de falha de envio.
+Esta decisão **substitui a proibição de retry de publicação da BE-016 acima**:
+RESERVED com reservedFrom=PENDING e lease expirado pode ganhar novo token sob
+lock/CAS e audit transacionais. Não reabrir FAILED/CANCELLED/SENT nem recuperar
+reserva de entrega ao provedor. Duplicatas de publicação são toleradas; não há
+exactly-once externo. Banco/preflight e espera de confirmação no consumer admitem
+retry técnico (60s, máximo 3, depois DLQ). Nenhum envio de e-mail é retentado.
+Sem provedor, ack/PUBLISHED preserva intenção e não fabrica sucesso; reprocessamento
+posterior exige política própria. Ver [CRON-QUEUES](CRON-QUEUES.md).

@@ -1,5 +1,16 @@
 # Próximas entregas e dependências
 
+## Após BE-018 — implementação preparada para revisão
+
+BE-017 já incorporada no PR #19; BE-018 prepara F5-06/F5-07 e estrutura F5-08.
+Ver [CRON-QUEUES](CRON-QUEUES.md). Próximas tarefas próprias: validação real
+Neon/concorrência e Cron/Queues/DLQ, PoC/adaptador Gmail sem retry de envio,
+planejador de renovação da janela, conteúdo de resumo e intervenção operacional.
+Consumer atual faz ack sem provedor e mantém PUBLISHED; não reprocessar esses
+registros automaticamente quando um provedor for ativado. Sem dependência nova
+para frontend e sem recurso remoto criado.
+
+
 Plano consolidado em TASK-DOC-BE-001, a partir das mains registradas em
 [PROJECT_STATUS](PROJECT_STATUS.md). Isto não autoriza executar todas as tarefas:
 um ticket por execução e PR/revisão por repositório. Escopo vigente em

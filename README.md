@@ -204,3 +204,14 @@ GET/PUT `/reminders/{sourceType}/{sourceId}` configuram uma regra própria. Scop
 domínio e preferências sincronizam a outbox atomicamente, com janela limitada e
 sem backfill. Sem opt-in explícito não há intenção automática. Ver [API](docs/API.md).
 Nenhum e-mail, Cron, Queue ou consumer foi implementado; Neon real continua pendente.
+
+
+## Cron e Queues (TASK-BE-018)
+
+Worker preserva HTTP Express e adiciona handlers internos scheduled/queue.
+Cron reserva outbox vencida em lotes e publica IDs; consumer revalida estado e
+propriedade. Sem provedor, mantém PUBLISHED e faz ack, sem enviar ou marcar SENT.
+Wrangler contém bindings de fila/DLQ e Cron a cada minuto; nenhum recurso remoto
+foi criado. Desenvolvimento HTTP/testes isolados continuam sem exigir banco.
+Leia [fluxo, recuperação e configuração](docs/CRON-QUEUES.md). Neon/infraestrutura
+real e Gmail permanecem pendentes, sem migrations ou deploy automáticos.

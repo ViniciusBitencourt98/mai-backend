@@ -1,5 +1,17 @@
 # Estado do Projeto MAI
 
+## Atualização BE-018 (branch de implementação)
+
+Base main `afccbe3`: BE-017 incorporada no PR #19. Branch
+`feat/BE-018-cron-queues` implementa Cron, reserva transacional limitada com lease
+recuperável **somente para publicação**, producer e consumer sem provedor.
+PUBLISHED continua distinto de SENT; não há envio fictício. Política técnica de
+retry/DLQ e configuração em [CRON-QUEUES](CRON-QUEUES.md).
+567 testes locais/32 arquivos, lint/typecheck/build dry-run aprovados. Nenhuma
+migration nova/aplicada, fila remota, deploy ou credencial. Neon e Cron/Queues reais
+não executados; revisão/merge pendentes. O histórico abaixo não certifica este recorte.
+
+
 Levantamento de TASK-DOC-BE-001 em 2026-11-14. Este documento descreve o código
 observado, não certifica operação em produção. Atualizar junto de cada entrega que
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em

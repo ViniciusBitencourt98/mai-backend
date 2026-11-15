@@ -106,3 +106,16 @@ Usar filtros no servidor por proprietário, texto, data, status, projeto/evento 
 - https://developers.cloudflare.com/queues/
 - https://developers.cloudflare.com/queues/platform/limits/
 - https://developers.cloudflare.com/workers/configuration/cron-triggers/
+
+
+## BE-018 — processamento interno implementado
+
+O mesmo Worker exporta fetch via adaptador Express, scheduled e queue; sem
+endpoint administrativo público. Fluxo: domínio/outbox → Cron → reserva
+transacional → Queue → consumer → provedor futuro. Descoberta limitada é seguida
+de lock users FOR UPDATE e CAS sob transação com audit, preservando ordem de
+locks da BE-017. Somente leases de publicação expirados são recuperáveis.
+Consumer sem provedor mantém PUBLISHED/ack; não registra SENT nem chama e-mail.
+Infra anterior ao envio admite recuperação/retry limitado na fila com DLQ;
+futuro envio ao provedor permanece sem retry automático.
+Configuração, falhas e limites reais em [CRON-QUEUES](CRON-QUEUES.md).
