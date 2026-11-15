@@ -11,3 +11,8 @@ AUTH_PUBLIC_ORIGIN="http://localhost:8787"
 AUTH_COOKIE_SECURE="false"
 AUTH_COOKIE_SAME_SITE="lax"
 # Remote HTTPS defaults to Secure + SameSite=Lax. Cross-site requires explicit None.
+
+# Jobs internos: filas são bindings Wrangler, nunca URLs/segredos.
+NOTIFICATION_BATCH_SIZE="20"
+NOTIFICATION_LEASE_SECONDS="60"
+# Cron a cada minuto; sem banco, apenas HTTP /health e testes isolados funcionam.
