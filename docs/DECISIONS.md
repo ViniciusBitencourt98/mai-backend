@@ -170,3 +170,26 @@ cada página/lista. As duas janelas mantêm seus limites de fonte; dashboard lim
 a soma visível a 10.000, sem truncamento silencioso. COUNT global fica no banco.
 Validar dias reais (DST/meia-noite suprimida), não adicionar 24h a instantes locais.
 Sem snapshot global prometido; sem nova migration, frontend, notificações ou deploy.
+
+## TASK-BE-015 — perfil/preferências sem alterar contrato de sessão
+
+GET/PATCH /me/preferences agrupam nome e preferências essenciais na própria conta.
+Reutilizar User.name e UserPreferences.timezone/emailEnabled; adicionar somente
+dailyDigestEnabled false e dailyDigestTime 08:00 (HH:mm local), com migration
+aditiva e CHECK. Não duplicar e-mail/nome, criar tabela nova ou alterar senha.
+
+Flags independentes preservam configuração ao desativar: o futuro envio de resumo
+exigirá ambas true, mas esta API não agenda/envia. Horário nunca é instante UTC;
+política de execução em DST será responsabilidade da futura tarefa de notificações.
+PATCH omitido preserva, null rejeita; GET com relação ausente não grava e usa
+defaults consistentes com o banco. Update do usuário ativo obtém bloqueio antes
+do upsert, com name/preferências transacionais e apenas campos enviados; toca
+User.updatedAt como auditoria. Nenhum dado temporal de domínio é reescrito.
+
+Preservar /auth/me e DTO público da sessão com timezone/emailEnabled existentes.
+Novos campos do resumo ficam no endpoint de preferências, evitando quebrar o
+cliente atual. Servidor relê preferências em cada autenticação; frontend deve
+refrescar sessão/visões após editar. Sem rotação/revogação desnecessária de sessão.
+Conta indisponível na leitura/escrita resulta em 401, sem ID arbitrário aceito.
+Code First: migration não aplicada, integração Neon/concorrência real pendente,
+sem e-mails/filas/Cron/frontend; ICS permanece V2.

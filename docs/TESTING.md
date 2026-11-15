@@ -285,3 +285,43 @@ permanecem pendentes na máquina do desenvolvedor. Nenhum teste simulado comprov
 PostgreSQL. Os 13 casos externos existentes não foram executados, nenhuma credencial
 foi solicitada e não houve migrations, deploy, frontend ou envio de e-mail.
 A limitação legada do OpenAPI global de decupagens continua fora do escopo.
+
+## TASK-BE-015 — perfil e preferências essenciais
+
+47 testes novos em tests/preferences/preferences.test.ts: leitura/defaults,
+edição parcial de nome/fuso, fuso inválido, booleanos estritos, ativação/desativação
+de e-mail/resumo independentes, preservação do horário ao desativar, HH:mm válido/
+inválido, null e campos extras/injeção rejeitados, preservação de outra conta,
+conta ausente/desativada, sessão revogada, auth/Origin/CSRF, mídia e tamanho de corpo,
+query estrita, CORS/preflight/no-store e leitura subsequente de /auth/me sem re-login.
+
+Persistência é simulada apenas nos testes. As asserções Prisma verificam seleção
+pública mínima, escopo userId/disabledAt, GET sem escrita/defaults, bloqueio por
+UPDATE anterior ao upsert, campos parciais, revalidação da conta e propagação de
+falha dentro da transação. Não comprovam rollback/concorrência PostgreSQL reais.
+O teste de autenticação confirma a seleção antiga timezone/emailEnabled, sem
+novos campos de resumo no DTO de /auth/me. A suíte HTTP usa AuthService e mecanismos de sessão do código de produção
+com repository fake, não um login persistido no Neon.
+
+| Verificação | Resultado nesta entrega |
+|---|---|
+| npm run lint | Passou |
+| npm run typecheck | Passou |
+| npm test | 498 passaram em 26 arquivos, zero skips na suíte local; inclui workerd |
+| npm run build | Passou, Wrangler dry-run sem upload |
+| OpenAPI 3.1, recorte /me/preferences e schemas referenciados | Passou; três exemplos validados com JSON Schema/formats |
+| Contratos existentes | Paths/schemas OpenAPI anteriores preservados, inclusive /auth/me |
+| git diff --check / links Markdown alterados | Conferidos |
+
+Client Prisma regenerado pelas APIs oficiais in-process 7.10.1 conforme o
+procedimento existente em PRISMA-NEON-LOCAL.md; CLI padrão não revalidado neste
+ticket, diante da limitação de CDN registrada anteriormente. Nenhuma verificação
+de TLS/checksum desativada e nenhuma alteração de dependências/lockfile.
+
+Migration 20261115000100_user_preferences apenas versionada. Permanecem pendentes:
+execução da migration/defaults/CHECK em Neon de desenvolvimento, criação da relação
+por upsert, concorrência de PATCHs parciais/disable e rollback de nome+preferências,
+sessão e consumo de fuso reais. Os 13 casos externos existentes não foram executados;
+nenhuma credencial solicitada, migration aplicada, mensagem enviada, Cron/Queue,
+frontend, merge ou deploy. O defeito legado do OpenAPI global de decupagens segue
+fora do escopo; a validação registrada é do novo recorte.

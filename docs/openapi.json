@@ -12240,6 +12240,249 @@
           }
         }
       }
+    },
+    "/me/preferences": {
+      "get": {
+        "summary": "Consultar perfil e preferências essenciais da própria conta",
+        "tags": [
+          "User preferences"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "description": "Conta exclusivamente da sessão autenticada; sem ID na rota/corpo/query. Query deve ser vazia. CORS com credenciais, Cache-Control no-store e X-Request-Id. GET não cria dados; PATCH altera apenas campos fornecidos, com nome e preferências na mesma transação e nova verificação de conta ativa. User.updatedAt registra alterações. Nenhum e-mail/cron/queue é disparado; instantes/datas e timezone de regras históricas não são reescritos. /auth/me preserva o contrato existente (name, preferences.timezone/emailEnabled), que reflete mudanças nas próximas requisições sem re-login. Campos de resumo só aparecem aqui.",
+        "responses": {
+          "200": {
+            "description": "Preferências públicas atuais; Cache-Control no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferences"
+                },
+                "example": {
+                  "name": "Criadora MAI",
+                  "timezone": "America/Bahia",
+                  "emailEnabled": false,
+                  "dailyDigestEnabled": false,
+                  "dailyDigestTime": "08:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR/INVALID_JSON: corpo/campos/timezone/HH:mm inválidos, null, PATCH vazio ou query não vazia/repetida. Não aceita userId/ownerId/e-mail/senha.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida/expirada/revogada, conta desativada ou removida (inclui nova verificação na escrita).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar nome e preferências da própria conta",
+        "tags": [
+          "User preferences"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "localDevelopmentCookie": []
+          }
+        ],
+        "description": "Conta exclusivamente da sessão autenticada; sem ID na rota/corpo/query. Query deve ser vazia. CORS com credenciais, Cache-Control no-store e X-Request-Id. GET não cria dados; PATCH altera apenas campos fornecidos, com nome e preferências na mesma transação e nova verificação de conta ativa. User.updatedAt registra alterações. Nenhum e-mail/cron/queue é disparado; instantes/datas e timezone de regras históricas não são reescritos. /auth/me preserva o contrato existente (name, preferences.timezone/emailEnabled), que reflete mudanças nas próximas requisições sem re-login. Campos de resumo só aparecem aqui.",
+        "responses": {
+          "200": {
+            "description": "Preferências públicas atuais; Cache-Control no-store",
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferences"
+                },
+                "example": {
+                  "name": "Criadora MAI",
+                  "timezone": "America/Sao_Paulo",
+                  "emailEnabled": true,
+                  "dailyDigestEnabled": true,
+                  "dailyDigestTime": "09:30"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR/INVALID_JSON: corpo/campos/timezone/HH:mm inválidos, null, PATCH vazio ou query não vazia/repetida. Não aceita userId/ownerId/e-mail/senha.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: sessão ausente/inválida/expirada/revogada, conta desativada ou removida (inclui nova verificação na escrita).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CORS_ORIGIN_DENIED, CSRF_ORIGIN_DENIED ou CSRF_TOKEN_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: falha inesperada, sem detalhes internos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE: serviço não configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE: corpo acima de 100 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: requer application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origem exata configurada como confiável; requerida mesmo em clientes não browser."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchUserPreferences"
+              },
+              "example": {
+                "timezone": "America/Sao_Paulo",
+                "emailEnabled": true,
+                "dailyDigestEnabled": true,
+                "dailyDigestTime": "09:30"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -15665,6 +15908,94 @@
             "$ref": "#/components/schemas/DashboardPublications"
           }
         }
+      },
+      "UserPreferences": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "timezone",
+          "emailEnabled",
+          "dailyDigestEnabled",
+          "dailyDigestTime"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Nome de exibição em User.name, trim, não vazio; não altera e-mail/senha."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "default": "America/Bahia",
+            "description": "Identificador de fuso reconhecido por Intl/IANA (inclui UTC e aliases aceitos pelo runtime); offsets fixos +/- não são aceitos. Não reescreve instantes/datas/regras históricas.",
+            "examples": [
+              "America/Bahia",
+              "America/Sao_Paulo",
+              "America/New_York"
+            ]
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Preferência mestre para futuros envios por e-mail. false impede futuramente qualquer envio, sem apagar a configuração do resumo. Nenhum envio ocorre nesta API."
+          },
+          "dailyDigestEnabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Opt-in para resumo diário futuro. Independente da flag mestre; um futuro envio requer ambas true. Desativar preserva horário/fuso."
+          },
+          "dailyDigestTime": {
+            "type": "string",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "minLength": 5,
+            "maxLength": 5,
+            "default": "08:00",
+            "description": "HH:mm local, formato de 24 horas, sem segundos/offset. Interpretar no timezone da preferência em futuro módulo de notificações; não é instante UTC nem agenda um job agora."
+          }
+        },
+        "description": "Projeção pública plana: nome e preferências essenciais. Linha de preferências ausente usa defaults sem gravar em GET; PATCH cria a relação existente com defaults. Não expõe userId, e-mail, senha, hash ou sessão."
+      },
+      "PatchUserPreferences": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Nome de exibição em User.name, trim, não vazio; não altera e-mail/senha."
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Identificador de fuso reconhecido por Intl/IANA (inclui UTC e aliases aceitos pelo runtime); offsets fixos +/- não são aceitos. Não reescreve instantes/datas/regras históricas.",
+            "examples": [
+              "America/Bahia",
+              "America/Sao_Paulo",
+              "America/New_York"
+            ]
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "description": "Preferência mestre para futuros envios por e-mail. false impede futuramente qualquer envio, sem apagar a configuração do resumo. Nenhum envio ocorre nesta API."
+          },
+          "dailyDigestEnabled": {
+            "type": "boolean",
+            "description": "Opt-in para resumo diário futuro. Independente da flag mestre; um futuro envio requer ambas true. Desativar preserva horário/fuso."
+          },
+          "dailyDigestTime": {
+            "type": "string",
+            "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+            "minLength": 5,
+            "maxLength": 5,
+            "description": "HH:mm local, formato de 24 horas, sem segundos/offset. Interpretar no timezone da preferência em futuro módulo de notificações; não é instante UTC nem agenda um job agora."
+          }
+        },
+        "description": "Parcial estrito, pelo menos um campo. Ausência preserva; null rejeitado em todos os campos. Booleanos não sofrem coerção. Fuso/horário podem ser configurados com e-mail/resumo desativados. Atualização de nome/preferências é transacional."
       }
     },
     "securitySchemes": {

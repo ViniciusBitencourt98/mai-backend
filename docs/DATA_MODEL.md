@@ -199,3 +199,19 @@ limitados pelo DTO; busca literal case-insensitive inicial, sem novo motor de bu
 Migration 20261114000100_publications aditiva, não aplicada. Enums, decisões de
 datas/status, extensão do catálogo e rollback em ADR-004. Integração Neon real e
 validação das FKs/índices permanecem pendentes. Nenhuma mudança em /calendar.
+
+## Preferências essenciais — TASK-BE-015
+
+User.name e UserPreferences.timezone/email_enabled são reutilizados. A relação
+1:1 existente recebe daily_digest_enabled BOOLEAN NOT NULL DEFAULT false e
+daily_digest_time CHAR(5) NOT NULL DEFAULT '08:00', com CHECK de HH:mm de 24 horas.
+Nenhuma tabela nova; PK user_id/FK existentes bastam para acesso por sessão.
+Não duplicar nome/e-mail nem transformar horário local em timestamp UTC.
+
+Migration 20261115000100_user_preferences aditiva, versionada e não aplicada.
+Defaults atendem relações existentes; relação ausente pode ser criada no PATCH.
+Nome/preferências são atualizados sob bloqueio do usuário ativo na mesma transação;
+User.updated_at registra a mudança. Sessões, credenciais, tarefas/eventos/publicações
+e fusos das regras permanecem intactos. Rollback removendo os dois campos perde
+configurações de resumo, exigindo decisão/backup; não há rollback automático.
+Validar tipos/defaults/CHECK/upsert/concorrência/rollback em Neon local futuramente.

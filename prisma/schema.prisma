@@ -43,6 +43,8 @@ model UserPreferences {
   userId       String  @id @map("user_id") @db.Uuid
   timezone     String  @default("America/Bahia") @db.VarChar(100)
   emailEnabled Boolean @default(false) @map("email_enabled")
+  dailyDigestEnabled Boolean @default(false) @map("daily_digest_enabled")
+  dailyDigestTime String @default("08:00") @map("daily_digest_time") @db.Char(5)
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")

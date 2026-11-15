@@ -5,10 +5,23 @@ observado, não certifica operação em produção. Atualizar junto de cada entr
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em
 [NEXT_STEPS](NEXT_STEPS.md) e regras em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
 
-## Atualização BE-014 (branch de implementação)
+## Atualização BE-015 (branch de implementação)
+
+Base main `cc16ef3`: BE-014 incorporada pelo PR #16. A branch
+`feat/BE-015-user-preferences` implementa GET/PATCH /me/preferences, aguardando
+revisão/merge. Reutiliza nome/fuso/e-mail e acrescenta opt-in/HH:mm do resumo diário
+na relação existente; /auth/me preservado. Migration 20261115000100_user_preferences
+é a décima versionada e não foi aplicada. Nenhuma credencial, e-mail, frontend ou
+deploy nesta entrega; Neon real continua pendente. Foram aprovados 498 testes
+locais em 26 arquivos (47 novos), lint/typecheck/build e o novo recorte OpenAPI.
+Ver API.md e TESTING.md.
+As tabelas seguintes preservam o levantamento histórico DOC-BE-001, não o estado
+de aprovação/merge da BE-015.
+
+## Atualização histórica BE-014 (já incorporada no PR #16)
 
 Base main `0ac482d`: BE-013 incorporada pelo PR #15. A branch
-`feat/BE-014-dashboard-api` implementa GET /dashboard, aguardando revisão/merge.
+`feat/BE-014-dashboard-api` implementou GET /dashboard, incorporado no PR #16.
 Resumo no fuso da sessão, atraso limitado a 30 dias anteriores, próximos itens em
 sete dias, contagens com unidades/janelas explícitas e listas limitadas. Reutiliza
 o calendário, sem nova tabela/migration ou frontend. A UI do dashboard continua
