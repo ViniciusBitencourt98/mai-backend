@@ -1,3 +1,4 @@
+import { scheduled, queue } from './notifications/handlers';
 import { createServer } from 'node:http';
 import { httpServerHandler } from 'cloudflare:node';
 import { env } from 'cloudflare:workers';
@@ -9,4 +10,5 @@ import { createApplicationServices } from './services/container';
 const virtualPort = 3000;
 const services = createApplicationServices(env, (req) => req.get('CF-Connecting-IP') ?? 'unknown');
 createServer(createApp(env.CORS_ALLOWED_ORIGIN, { services })).listen(virtualPort);
-export default httpServerHandler({ port: virtualPort });
+const http = httpServerHandler({ port: virtualPort });
+export default { fetch: http.fetch, scheduled, queue };

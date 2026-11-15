@@ -197,3 +197,13 @@ hooks são usados em testes; os scopes reais habilitam integração.
 Continuam futuros: varredura periódica para renovar janelas sem novas escritas,
 conteúdo/planejador de resumos, Cron, Queue e envio/ack de provedor. Nenhum destes
 componentes foi habilitado, e Neon real/rollback/concorrência seguem pendentes.
+
+
+## Atualização BE-018 — Cron/Queues e política de recuperação
+
+As seções BE-016/017 acima são históricas. BE-018 implementa dispatcher Cron,
+producer e estrutura de consumer. A restrição anterior de não recuperar nenhuma
+reserva é refinada: somente publicação (reservedFrom=PENDING) pode ser recuperada
+após expirar, sob lock/CAS e audit, com novo token. Entrega ao provedor permanece
+sem retry automático. Consumer sem provedor apenas valida/ack, mantendo PUBLISHED;
+não marca SENT. Fluxo, configuração e política completa em [CRON-QUEUES](CRON-QUEUES.md).

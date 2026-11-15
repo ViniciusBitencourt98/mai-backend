@@ -69,6 +69,32 @@ export class NotificationService {
       return { patch: { status: 'RESERVED', reservedFrom: row.status, leaseToken: this.uuid(), leaseUntil: new Date(now.getTime() + seconds * 1000), attemptCount: row.attemptCount + 1 }, result: 'RESERVED', at: now };
     });
   }
+  /** Infrastructure-only claim. Rechecks state under the repository's owner lock/CAS.
+   * Only publication leases are recoverable: a delivery may already have reached a provider. */
+  async reserveDispatch(owner: string, id: string, seconds = 60) {
+    parse(leaseDto, { seconds });
+    const token = this.uuid();
+    const claimed = await this.repository.mutate(owner, parse(z.uuid(), id), (row, context) => {
+      const expiredPublication = row.status === 'RESERVED' && row.reservedFrom === 'PENDING'
+        && row.leaseUntil !== null && row.leaseUntil <= this.now();
+      if (row.status !== 'PENDING' && !expiredPublication) return null;
+      if (!this.valid(row, context)) return this.cancelled();
+      const now = this.now();
+      if (row.scheduledAt > now) return null;
+      return { patch: { status: 'RESERVED', reservedFrom: 'PENDING', leaseToken: token,
+        leaseUntil: new Date(now.getTime() + seconds * 1000), attemptCount: row.attemptCount + 1 },
+        result: 'RESERVED', at: now };
+    });
+    return claimed.status === 'RESERVED' && claimed.leaseToken === token ? claimed : null;
+  }
+  /** Read-only delivery preflight apart from cancelling obsolete intentions.
+   * No delivery lease, provider call or success is fabricated while the adapter is absent. */
+  async prepareDelivery(owner: string, id: string) {
+    return this.repository.mutate(owner, parse(z.uuid(), id), (row, context) => {
+      if (live(row.status) && !this.valid(row, context)) return this.cancelled();
+      return null;
+    });
+  }
   private lease(row: OutboxRecord, token: string) {
     if (row.status !== 'RESERVED' || row.leaseToken !== token || !row.leaseUntil || row.leaseUntil <= this.now()) throw conflict('Invalid or expired lease');
   }

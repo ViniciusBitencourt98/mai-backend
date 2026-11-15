@@ -399,3 +399,21 @@ não foram aplicadas aqui. Pendentes no Neon local: atomicidade de domínio+outb
 log, disputas de edição/configuração/preferência/reserva, ordem de locks, timeout,
 limites e custo da janela/recorrência. Os 13 testes externos existentes não foram
 executados. Nenhuma credencial, envio, Cron, Queue, consumer, frontend ou deploy.
+
+
+## TASK-BE-018 — processamento Cron/Queues
+
+567 testes locais passaram em 32 arquivos (29 novos, zero skips), incluindo
+workerd HTTP existente. Lint/typecheck e build Wrangler dry-run aprovados.
+Novos testes em notifications/processing.test.ts e handlers.test.ts: seleção
+devidos/lote/ordem, disputa simulada, lease ativo/expirado/recuperação/token antigo,
+não recuperar entrega, falha de publicação/confirmação, duplicatas, payload mínimo,
+mensagem inválida/obsoleta/terminal, cancelamento/revalidação/owner persistido,
+consumer sem provedor sem SENT, banco e logs sanitizados.
+
+Prisma gerado por APIs oficiais 7.10.1 conforme alternativa já documentada em
+PRISMA-NEON-LOCAL: npm ci instala dependências mas postinstall padrão continua
+bloqueado por 403 do CDN. Sem desabilitar TLS/checksum nem alterar lockfile.
+Neon e testes de infraestrutura reais **não executados**, sem migrations/deploy.
+Suítes simuladas não comprovam locks/rollback/constraints/índices PostgreSQL ou
+Cron/Queues/DLQ remotos. Procedimentos e política em [CRON-QUEUES](CRON-QUEUES.md).

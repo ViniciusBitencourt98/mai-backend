@@ -3,8 +3,35 @@
   "name": "mai-backend",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-12",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "vars": {
-    "CORS_ALLOWED_ORIGIN": ""
+    "CORS_ALLOWED_ORIGIN": "",
+    "NOTIFICATION_BATCH_SIZE": "20",
+    "NOTIFICATION_LEASE_SECONDS": "60"
+  },
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "queues": {
+    "producers": [
+      {
+        "binding": "NOTIFICATION_QUEUE",
+        "queue": "mai-notifications"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "mai-notifications",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "retry_delay": 60,
+        "dead_letter_queue": "mai-notifications-dlq"
+      }
+    ]
   }
 }

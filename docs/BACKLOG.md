@@ -293,3 +293,14 @@ incorporada no PR #18). Hooks transacionais nos scopes de tarefas/eventos/
 publicações/recorrência e preferências, planejamento limitado, invalidação e
 GET/PUT /reminders/{sourceType}/{sourceId}. Código preparado para revisão, não
 aceite Neon. Sem migration, e-mail/Cron/Queue/consumer/frontend ou deploy.
+
+
+## TASK-BE-018 — Cron/Queues (Code First, aguardando revisão)
+
+Base main afccbe3, BE-017 incorporada. F5-06/F5-07 implementados em código;
+F5-08 preparado sem provedor. Reserva com lock por usuário/CAS, lease técnico
+recuperável só na publicação, payload mínimo, consumer com preflight e retry de
+infraestrutura limitado/DLQ. Não marcar F0-09/F0-10 ou F5-14 remotos como aprovados.
+567 testes/32 arquivos, lint/typecheck/build dry-run passaram; Neon/infra remota
+não executados. Sem envio, migration nova, frontend ou deploy.
+Detalhes, política e pendências: [CRON-QUEUES](CRON-QUEUES.md).
