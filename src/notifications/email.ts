@@ -14,10 +14,21 @@ export interface EmailBindings {
 }
 const base64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
 const mailbox = z.email().max(254).refine(s => !/[\r\n]/.test(s));
+/** RFC 2047: each encoded word <=75 ASCII characters, without splitting UTF-8. */
+export function encodedSubject(subject: string) {
+  const words: string[] = [];
+  let chunk = '';
+  for (const char of subject) {
+    if (Buffer.byteLength(chunk + char, 'utf8') > 42) { words.push(`=?UTF-8?B?${base64(chunk)}?=`); chunk = ''; }
+    chunk += char;
+  }
+  if (chunk || !words.length) words.push(`=?UTF-8?B?${base64(chunk)}?=`);
+  return words.join('\r\n ');
+}
 export function mime(email: Email, from: string) {
   mailbox.parse(from); mailbox.parse(email.to);
   const boundary = 'mai_' + crypto.randomUUID();
-  return [`From: ${from}`, `To: ${email.to}`, `Subject: =?UTF-8?B?${base64(email.subject)}?=`,
+  return [`From: ${from}`, `To: ${email.to}`, `Subject: ${encodedSubject(email.subject)}`,
     'MIME-Version: 1.0', `Content-Type: multipart/alternative; boundary="${boundary}"`, '',
     ...(['text/plain', 'text/html'] as const).flatMap((type, index) => [`--${boundary}`, `Content-Type: ${type}; charset=UTF-8`,
       'Content-Transfer-Encoding: base64', '', base64(index ? email.html : email.text).match(/.{1,76}/g)?.join('\r\n') ?? '']),

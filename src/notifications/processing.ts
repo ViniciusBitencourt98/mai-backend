@@ -11,7 +11,7 @@ export interface NotificationBindings {
   NOTIFICATION_BATCH_SIZE?: string;
   NOTIFICATION_LEASE_SECONDS?: string;
 }
-export type JobEvent = 'DISCOVERY_FAILED' | 'RESERVATION_FAILED' | 'PUBLICATION_FAILED' | 'CONFIRMATION_FAILED'
+export type JobEvent = 'RENEWAL_LIMIT' | 'RENEWAL_FAILED' | 'DISCOVERY_FAILED' | 'RESERVATION_FAILED' | 'PUBLICATION_FAILED' | 'CONFIRMATION_FAILED'
   | 'DELIVERY_FAILED' | 'PROVIDER_ACCEPTED' | 'DELIVERY_UNCERTAIN' | 'QUEUED' | 'INVALID_MESSAGE' | 'OBSOLETE' | 'DATABASE_FAILED' | 'AWAITING_PUBLICATION' | 'PROVIDER_NOT_CONFIGURED';
 // Only fixed categories and server-derived UUIDs; never log exception text or queue bodies.
 export type JobLogger = (event: JobEvent, outboxId?: string) => void;

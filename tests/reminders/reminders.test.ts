@@ -93,3 +93,19 @@ it('one-off task deadline uses user timezone and completion/reopening replaces o
  task.status='COMPLETED';task.updatedAt=new Date(now.getTime()+1000);await sync();expect(app.state().rows.filter(r=>r.status==='PENDING')).toHaveLength(0);
  task.status='PENDING';task.updatedAt=new Date(now.getTime()+2000);await sync();expect(app.state().rows.filter(r=>r.status==='PENDING')).toHaveLength(1);
 });
+
+it('renews a recurring horizon as time advances without domain writes or duplicate intentions',async()=>{
+ const app=fixture();app.rule.sourceType='TASK';app.rule.leadMinutes=0;
+ const recurrence={id:randomUUID(),version:1,state:'ACTIVE',frequency:'DAILY',interval:1,startDate:new Date('2026-11-16'),endDate:null,count:90,weekdays:[],timezone:'UTC',updatedAt:now};
+ const task={dueDate:null,status:'PENDING',archivedAt:null,updatedAt:now,recurrenceRules:[recurrence]};
+ Object.assign(app.tx,{task:{findFirst:vi.fn(async()=>task)},taskRecurrence:{findFirst:vi.fn(async()=>recurrence)},taskOccurrence:{findUnique:vi.fn(async()=>null)}});
+ const ref={sourceType:'TASK' as const,sourceId:id};
+ await synchronizeReminders(app.tx as never,owner,ref,now);
+ expect(app.state().rows.some(r=>(r.occurrenceDate as Date).toISOString().startsWith('2026-12-20'))).toBe(false);
+ const later=new Date('2026-12-01T10:00:00Z');vi.setSystemTime(later);
+ await synchronizeReminders(app.tx as never,owner,ref,later);
+ expect(app.state().rows.some(r=>(r.occurrenceDate as Date).toISOString().startsWith('2026-12-20')&&r.status==='PENDING')).toBe(true);
+ const size=app.state().rows.length;await synchronizeReminders(app.tx as never,owner,ref,later);expect(app.state().rows).toHaveLength(size);
+ expect(task.updatedAt).toEqual(now);expect(recurrence.version).toBe(1);
+ recurrence.state='ENDED';await synchronizeReminders(app.tx as never,owner,ref,later);expect(app.state().rows.filter(r=>r.status==='PENDING')).toHaveLength(0);
+});
