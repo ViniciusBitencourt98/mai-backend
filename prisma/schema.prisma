@@ -27,6 +27,8 @@ model User {
   disabledAt   DateTime?        @map("disabled_at") @db.Timestamptz(3)
   createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reminderRules ReminderRule[]
+  notificationOutbox NotificationOutbox[]
   preferences  UserPreferences?
   sessions     Session[]
   projects     Project[]
@@ -401,4 +403,118 @@ model Publication {
   @@index([ownerId, status, scheduledAt])
   @@index([ownerId, projectId])
   @@map("publications")
+}
+
+
+enum NotificationSourceType {
+  TASK
+  EVENT
+  PUBLICATION
+}
+
+enum NotificationType {
+  TASK_REMINDER
+  EVENT_REMINDER
+  PUBLICATION_REMINDER
+  DAILY_DIGEST
+}
+
+enum NotificationStatus {
+  PENDING
+  RESERVED
+  PUBLISHED
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum NotificationResult {
+  CREATED
+  RESERVED
+  QUEUED
+  PROVIDER_ACCEPTED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationFailureCategory {
+  NETWORK
+  PROVIDER_REJECTED
+  INTERNAL
+  LEASE_EXPIRED
+  STALE
+  USER_CANCELLED
+}
+
+model ReminderRule {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  sourceType NotificationSourceType @map("source_type")
+  sourceId String @map("source_id") @db.Uuid
+  leadMinutes Int @map("lead_minutes")
+  enabled Boolean @default(true)
+  version Int @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  owner User @relation(fields:[ownerId],references:[id],onDelete:Restrict)
+  intentions NotificationOutbox[]
+  @@unique([ownerId,sourceType,sourceId])
+  @@unique([id,ownerId])
+  @@map("reminder_rules")
+}
+
+model NotificationOutbox {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  type NotificationType
+  sourceType NotificationSourceType? @map("source_type")
+  sourceId String? @map("source_id") @db.Uuid
+  reminderRuleId String? @map("reminder_rule_id") @db.Uuid
+  ruleVersion Int? @map("rule_version")
+  sourceVersion String @map("source_version") @db.Char(64)
+  recurrenceRuleId String? @map("recurrence_rule_id") @db.Uuid
+  recurrenceVersion Int? @map("recurrence_version")
+  occurrenceDate DateTime? @map("occurrence_date") @db.Date
+  digestDate DateTime? @map("digest_date") @db.Date
+  timezone String @db.VarChar(100)
+  scheduledAt DateTime @map("scheduled_at") @db.Timestamptz(3)
+  status NotificationStatus @default(PENDING)
+  idempotencyKey String @map("idempotency_key") @db.Char(64)
+  leaseToken String? @map("lease_token") @db.Uuid
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz(3)
+  reservedFrom NotificationStatus? @map("reserved_from")
+  attemptCount Int @default(0) @map("attempt_count")
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
+  sentAt DateTime? @map("sent_at") @db.Timestamptz(3)
+  failedAt DateTime? @map("failed_at") @db.Timestamptz(3)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  lastError NotificationFailureCategory? @map("last_error")
+  providerMessageId String? @map("provider_message_id") @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  owner User @relation(fields:[ownerId],references:[id],onDelete:Restrict)
+  reminderRule ReminderRule? @relation(fields:[reminderRuleId,ownerId],references:[id,ownerId],onDelete:Restrict,onUpdate:Restrict)
+  deliveryLog NotificationDeliveryLog[]
+  @@unique([ownerId,idempotencyKey])
+  @@unique([ownerId,type,digestDate])
+  @@unique([id,ownerId])
+  @@index([status,scheduledAt])
+  @@index([status,leaseUntil])
+  @@index([ownerId,scheduledAt,id])
+  @@index([ownerId,reminderRuleId,status])
+  @@map("notification_outbox")
+}
+
+model NotificationDeliveryLog {
+  id String @id @default(uuid()) @db.Uuid
+  outboxId String @map("outbox_id") @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  status NotificationStatus
+  attemptedAt DateTime @default(now()) @map("attempted_at") @db.Timestamptz(3)
+  result NotificationResult
+  errorCategory NotificationFailureCategory? @map("error_category")
+  providerMessageId String? @map("provider_message_id") @db.VarChar(200)
+  outbox NotificationOutbox @relation(fields:[outboxId,ownerId],references:[id,ownerId],onDelete:Restrict,onUpdate:Restrict)
+  @@index([ownerId,outboxId,attemptedAt,id])
+  @@map("notification_delivery_log")
 }

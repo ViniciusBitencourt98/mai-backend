@@ -14,8 +14,8 @@ um ticket por execução e PR/revisão por repositório. Escopo vigente em
 | **TASK-FE-017** — publicações no calendário (F4-04, parcela frontend) | Frontend | BE-013 incorporada; FE-016; FE-013/014 já incorporadas | Consumir novo tipo/filtro, representar e abrir publicação original; preservar tarefas/eventos/fusos |
 | **TASK-BE-014 / F4-05** — dashboard agregado (incorporado, PR #16) | Backend | F3-13/BE-010, F4-02/BE-012; conferir contrato com BE-013 | Endpoint autenticado de hoje, atrasadas e próximos eventos/publicações; limites/fuso/ownership e OpenAPI |
 | **F4-06** — dashboard básico e ações rápidas | Frontend | F4-05 incorporada, FE-008/010 e integração editorial FE-016 | Substituir placeholder por dados reais e ações de tarefa/anotação; sem analytics V2 |
-| **TASK-BE-015 / F1-08** — perfil e preferências (backend em branch, revisão pendente) | Backend → frontend | Auth F1-02/03/04; lacunas confirmadas no status | Definir edição de timezone/preferências necessárias ao e-mail, contrato antes da tela; leitura de auth/me não basta |
-| **F5-01–F5-14** — notificações/e-mail/resumo | Backend e frontend em tickets próprios | Fluxos de domínio; F4-09 sem ICS; F1-08 para preferências; PoCs F0-09/10/11 | Outbox transacional, scheduler/fila, adaptador Gmail, idempotência, resumo por fuso e observabilidade; sem retry automático de envio |
+| **TASK-BE-015 / F1-08** — perfil e preferências (backend incorporado, PR #17) | Backend → frontend | Auth F1-02/03/04; lacunas confirmadas no status | Definir edição de timezone/preferências necessárias ao e-mail, contrato antes da tela; leitura de auth/me não basta |
+| **TASK-BE-016 / F5-01–02**, depois **F5-03–F5-14** — notificações/e-mail/resumo | Backend e frontend em tickets próprios | Fluxos de domínio; F4-09 sem ICS; F1-08 para preferências; PoCs F0-09/10/11 | Outbox transacional, scheduler/fila, adaptador Gmail, idempotência, resumo por fuso e observabilidade; sem retry automático de envio |
 | **F6-03** — auditoria visual/componentes | Frontend | UI atual e STYLE; pode iniciar em paralelo com APIs | Inventariar/reutilizar componentes, corrigir responsividade/acessibilidade/estilo essenciais; não migrar biblioteca sem aprovação |
 | **F2-13, F3-17, F4-09** — validação local dos fluxos | Máquina do desenvolvedor, ambos os repos | Migrations de desenvolvimento conferidas e contratos/clients implementados | Executar fluxos essenciais com Neon real, dois usuários, persistência/constraints/transações; registrar falhas e dados sintéticos de teste |
 | **F6-01/02/04/05/06** — correções e preparação | Ambos, em PRs separados | Resultados locais, auditoria e fluxos de e-mail implementados | Corrigir regressões/segurança, backup/restore, falhas e observabilidade antes da publicação |
@@ -24,8 +24,7 @@ um ticket por execução e PR/revisão por repositório. Escopo vigente em
 BE-013 foi incorporada à main pelo PR #15; a validação Neon continua pendente.
 FE-016/017 pertencem ao frontend e não foram executadas por BE-014; conferir a
 main daquele repo antes de iniciar suas tarefas, pois o retrato DOC-BE-001 é datado. TASK-BE-014 foi incorporada no PR #16; a UI segue F4-06 até receber ID próprio.
-O mantenedor atribuiu TASK-BE-015 à API de preferências, preparada na branch
-feat/BE-015-user-preferences. A futura UI de preferências depende desse contrato
+TASK-BE-015 foi incorporada no PR #17. A futura UI de preferências depende desse contrato
 e segue F1-08 até receber ID próprio. Para notificações/auditoria, preservar os IDs F existentes. Não inventar novos IDs
 BE/FE nem reutilizar FE-015.
 
@@ -38,7 +37,7 @@ se tocar nos mesmos componentes/rotas de FE-016/017, combinar limites de arquivo
 e revisar conflitos. Cada PR registra dependências e exige merge manual.
 
 A API do dashboard está incorporada no PR #16; o frontend F4-06 pode consumir
-GET /dashboard. Para preferências, aguardar incorporação de BE-015 e consumir
+GET /dashboard. Para preferências, consumir
 GET/PATCH /me/preferences, refrescando /auth/me após editar. E-mail não precisa esperar ICS: o gate F4-09
 foi reduzido aos fluxos editoriais/agenda/dashboard essenciais.
 
@@ -75,3 +74,16 @@ Registrar SHAs, cenários, resultados/skips e falhas reais. Corrigir falhas nos
 repos responsáveis, revisar PRs, repetir apenas checks afetados e obter aceite.
 ICS/Google, automações, mídia, colaboração e cobertura extensiva V2 não bloqueiam
 esse encerramento. Não remover os testes locais essenciais.
+
+
+## Após a fundação BE-016
+
+TASK-BE-016 implementa a estrutura interna na branch feat/BE-016-notification-outbox,
+aguardando revisão/incorporação. Não equivale a notificações operacionais. Seguir
+NOTIFICATIONS-OUTBOX.md: F5-03 integra criação/invalidação à mesma transação de
+negócio, respeitando ordem de bloqueio usuário→origem→regra/outbox; F5-04 prepara
+regras/UI, F5-05 conteúdo/planejador do resumo, F5-06/07 dispatcher/producer e
+F5-08–11 adaptador/consumer/resultado/ack sem retry automático. PoCs F0-09/10/11 e
+validação Neon continuam necessárias antes do aceite integrado. F5-12/13 tratam
+observabilidade/reconciliação/reenvio manual autorizado; lease expirado jamais
+justifica reenvio automático. Não inventar novo ID BE para os próximos recortes.

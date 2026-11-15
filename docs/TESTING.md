@@ -325,3 +325,47 @@ sessão e consumo de fuso reais. Os 13 casos externos existentes não foram exec
 nenhuma credencial solicitada, migration aplicada, mensagem enviada, Cron/Queue,
 frontend, merge ou deploy. O defeito legado do OpenAPI global de decupagens segue
 fora do escopo; a validação registrada é do novo recorte.
+
+## TASK-BE-016 — notificações/outbox internas
+
+26 testes novos em tests/notifications/notifications.test.ts e persistence.test.ts.
+Persistência/serialização são simuladas somente nas suítes; aplicação usa Prisma.
+Cenários: DTOs/limites, regra própria e versão/ativação, cálculo de antecedência,
+intenção/log únicos sob criação concorrente simulada, repetição tardia, identidade
+recorrente e nova validade, fontes/preferências indisponíveis, janela de 30 dias,
+reserva disputada, publicação técnica versus aceite do provedor, token falso/lease
+expirado, falha terminal sem retry, cancelamento/invalidação idempotentes, ownership,
+resumo único por dono/dia e DST gap/fold, paginação/histórico e categorias de erro.
+
+Testes do repository real com client mockado verificam owner em leituras/CAS/logs,
+transação de intenção+histórico, limites ativos, falha propagada no audit insert,
+regra versionada e cancelamento com logs, consulta paginada e uso em transação
+externa sem nested commit. Resolução de fonte usa schedule/resolveLocal existentes:
+tarefa civil às 09:00, estado individual, versão atual/PAUSED, evento movido/cancelado,
+fold/gap (sem aceitar override de ocorrência inexistente), publicação sem data/
+arquivada/cancelada/PUBLISHED. Nada disso comprova integridade PostgreSQL real.
+
+| Verificação | Resultado desta entrega |
+|---|---|
+| npm run lint | Passou |
+| npm run typecheck | Passou |
+| npm test | 524 passaram em 28 arquivos; 26 novos, zero skips locais, inclui workerd |
+| npm run build | Passou, Wrangler dry-run sem upload |
+| Prisma Client | Regenerado com APIs oficiais in-process 7.10.1, procedimento existente |
+| Migration SQL | 22 statements reconhecidos pelo parser PostgreSQL pglast; sem execução |
+| Contrato HTTP/OpenAPI | Inalterado; nenhum endpoint artificial criado |
+| git diff --check / links de documentação alterados | Conferidos |
+
+Fixtures serializam operações para exercitar o estado do serviço; isso não é
+prova de concorrência/bloqueio/unique/rollback no banco. A migration
+20261115000200_notification_outbox não foi aplicada. Permanecem pendentes em Neon:
+FK/CHECK/unique e defaults, corrida de criação/reserva, cancelamento concorrente,
+rollback de intenção+log e regra+invalidação, custo/índices e interação com CRUDs.
+O CLI Prisma padrão não foi revalidado neste ticket (limitação de CDN previamente
+registrada); nenhuma verificação TLS/checksum foi desativada.
+
+Nenhuma credencial solicitada. Os 13 casos externos existentes não foram executados.
+Não houve criação de endpoints, envio, produtor de domínio integrado, Cron, Queue,
+Gmail, resumo completo, frontend, merge ou deploy. O build/suíte existentes
+continuam validando o runtime local do backend; o futuro processamento de
+notificações em Worker/Queue conectado a banco/provedor não foi executado.

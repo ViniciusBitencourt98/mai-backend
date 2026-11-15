@@ -193,3 +193,32 @@ refrescar sessão/visões após editar. Sem rotação/revogação desnecessária
 Conta indisponível na leitura/escrita resulta em 401, sem ID arbitrário aceito.
 Code First: migration não aplicada, integração Neon/concorrência real pendente,
 sem e-mails/filas/Cron/frontend; ICS permanece V2.
+
+## TASK-BE-016 — política O-09/O-10 e outbox interna
+
+Os marcadores O-09/O-10 do backlog não tinham política detalhada implementada.
+[NOTIFICATIONS-OUTBOX](NOTIFICATIONS-OUTBOX.md) registra a proposta implementada
+para revisão: antecedência 0–30 dias, tarefas civis às 09:00 no fuso aplicável,
+eventos em startAt efetivo, publicações em scheduledAt e resumo na hora local
+BE-015. Gap DST recusado, fold primeiro instante. Planejamento de envio limitado
+aos próximos 30 dias; sem materialização antecipada ilimitada de recorrências.
+
+ReminderRule, NotificationOutbox e NotificationDeliveryLog persistentes, com owner,
+versões, chaves únicas, FKs compostas e CHECKs; referência polimórfica à origem
+validada no repository, sem FK PostgreSQL aos três tipos de domínio. Estados
+PENDING/RESERVED/PUBLISHED/SENT/FAILED/CANCELLED: PUBLISHED é aceite técnico da fila,
+SENT apenas após aceite do provedor, não entrega/leitura. Lease técnico não é
+credencial; reservas expiradas não são recuperadas para reenvio automático.
+
+Não retentar automaticamente envio **nem publicação**. Falhas/expiração ficam
+terminais e auditadas por categorias, sem tokens/respostas brutas de provedor.
+Resumo único por proprietário/dia civil mesmo após cancelamento/falha; não é
+reaberto automaticamente. Sem promessa de exactly-once externo; confirmação tardia
+ou resposta perdida exige reconciliação manual antes de eventual novo envio.
+
+Configuração efetiva da regra cancela suas intenções vivas atomicamente. Invalidação
+por intenção e preflight nas transições estão implementados; hooks automáticos dos
+CRUDs são F5-03 pendente. Há adapter para compartilhar a transação de domínio e
+ordem futura de bloqueio usuário→origem→regra/outbox. Sem endpoints artificiais,
+Cron/Queue/Gmail, conteúdo/envio de resumo, frontend ou deploy neste recorte.
+Migration apenas versionada; integridade/concorrência reais aguardam Neon.

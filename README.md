@@ -187,3 +187,12 @@ parcial estrito; `/auth/me` mantém seu contrato. Defaults: America/Bahia, e-mai
 resumo false, horário 08:00. Não envia e-mail nem reescreve datas históricas.
 Migration aditiva versionada, não aplicada; frontend/Neon real pendentes.
 Ver [contrato](docs/API.md#perfil-e-preferências-essenciais--task-be-015--f1-08).
+
+
+## Fundação de notificações (TASK-BE-016)
+
+ReminderRule, NotificationOutbox e NotificationDeliveryLog armazenam regras,
+intenções idempotentes, leases/estados e histórico, via serviços internos sem API
+pública. Migration versionada, não aplicada; não há envio, Cron ou Queue.
+Ver [política, limites e próximos componentes](docs/NOTIFICATIONS-OUTBOX.md).
+Hooks transacionais de domínio, processamento e Neon real permanecem pendentes.

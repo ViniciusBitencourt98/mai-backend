@@ -722,3 +722,11 @@ Erros no envelope padrão: 400 VALIDATION_ERROR/INVALID_JSON, 401 UNAUTHENTICATE
 não configurado. Contrato UserPreferences/PatchUserPreferences e exemplos no
 OpenAPI. Integração Neon, concorrência/rollback e aplicação da migration seguem
 pendentes; não há envio de e-mail, Cron/Queues, frontend, ICS ou Google Calendar.
+
+## Fundação interna de notificações — TASK-BE-016
+
+Nenhum endpoint de notificação/outbox foi criado. NotificationService e scope/
+repositories são internos para futuros produtores/processadores autorizados;
+não adicionar rotas públicas para dados técnicos, leases ou confirmações de envio.
+O contrato HTTP/OpenAPI existente permanece inalterado. Interfaces, estados,
+DTOs internos e limites estão em [NOTIFICATIONS-OUTBOX](NOTIFICATIONS-OUTBOX.md).

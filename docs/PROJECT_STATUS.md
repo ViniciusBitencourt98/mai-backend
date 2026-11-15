@@ -5,11 +5,24 @@ observado, não certifica operação em produção. Atualizar junto de cada entr
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em
 [NEXT_STEPS](NEXT_STEPS.md) e regras em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
 
-## Atualização BE-015 (branch de implementação)
+## Atualização BE-016 (branch de implementação)
+
+Base main `db63079`: BE-015 incorporada no PR #17. A branch
+`feat/BE-016-notification-outbox` prepara ReminderRule, NotificationOutbox e
+NotificationDeliveryLog, com migration 20261115000200_notification_outbox (décima
+primeira versionada, não aplicada), serviços internos e trilha transacional.
+Nenhum endpoint, integração automática aos CRUDs, processamento de fila, Cron ou
+envio foi entregue. Os próximos componentes e limites estão em
+[NOTIFICATIONS-OUTBOX](NOTIFICATIONS-OUTBOX.md). Revisão/merge e Neon real pendentes.
+Foram aprovados 524 testes locais em 28 arquivos (26 novos), lint/typecheck/build
+e parsing sintático do SQL (sem execução). As tabelas históricas abaixo não
+representam aprovação deste recorte.
+
+## Atualização histórica BE-015 (incorporada no PR #17)
 
 Base main `cc16ef3`: BE-014 incorporada pelo PR #16. A branch
-`feat/BE-015-user-preferences` implementa GET/PATCH /me/preferences, aguardando
-revisão/merge. Reutiliza nome/fuso/e-mail e acrescenta opt-in/HH:mm do resumo diário
+`feat/BE-015-user-preferences` implementou GET/PATCH /me/preferences, incorporada
+no PR #17. Reutiliza nome/fuso/e-mail e acrescenta opt-in/HH:mm do resumo diário
 na relação existente; /auth/me preservado. Migration 20261115000100_user_preferences
 é a décima versionada e não foi aplicada. Nenhuma credencial, e-mail, frontend ou
 deploy nesta entrega; Neon real continua pendente. Foram aprovados 498 testes
