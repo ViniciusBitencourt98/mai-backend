@@ -1,3 +1,5 @@
+import {createReminderDependencies} from '../infra/database/reminder-scope';
+import type {ReminderDependencies} from './reminder.service';
 import { createPreferencesScope } from '../infra/database/preferences-scope';
 import type { PreferencesDependencies } from './preferences.service';
 import { createDashboardScope } from '../infra/database/dashboard-scope';
@@ -38,8 +40,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const calendar:CalendarDependencies={run:createCalendarScope(bindings)};
   const dashboard: DashboardDependencies = { run: createDashboardScope(bindings) };
   const preferences: PreferencesDependencies = { run: createPreferencesScope(bindings) };
-  return { preferences, dashboard, publications, calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const reminders=createReminderDependencies(bindings);
+  return { reminders, preferences, dashboard, publications, calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar' | 'publications' | 'dashboard' | 'preferences'> & { preferences?: PreferencesDependencies; dashboard?: DashboardDependencies; publications?: PublicationDependencies; projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar' | 'publications' | 'dashboard' | 'preferences' | 'reminders'> & { reminders?: ReminderDependencies; preferences?: PreferencesDependencies; dashboard?: DashboardDependencies; publications?: PublicationDependencies; projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };

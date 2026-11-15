@@ -284,3 +284,12 @@ Política O-09/O-10 e limites em NOTIFICATIONS-OUTBOX.md. Preparada para revisã
 sem migration aplicada, endpoint novo, hooks automáticos de CRUD, envio, Cron,
 Queue ou frontend. F5-03 e processamento/resumo completos continuam pendentes;
 Neon/constraints/concorrência real não foram validados.
+
+
+## TASK-BE-017 — F5-03 e API mínima de regras
+
+Implementada na branch feat/BE-017-domain-reminders, base main 013d49e (BE-016
+incorporada no PR #18). Hooks transacionais nos scopes de tarefas/eventos/
+publicações/recorrência e preferências, planejamento limitado, invalidação e
+GET/PUT /reminders/{sourceType}/{sourceId}. Código preparado para revisão, não
+aceite Neon. Sem migration, e-mail/Cron/Queue/consumer/frontend ou deploy.

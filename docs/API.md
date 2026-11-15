@@ -730,3 +730,56 @@ repositories são internos para futuros produtores/processadores autorizados;
 não adicionar rotas públicas para dados técnicos, leases ou confirmações de envio.
 O contrato HTTP/OpenAPI existente permanece inalterado. Interfaces, estados,
 DTOs internos e limites estão em [NOTIFICATIONS-OUTBOX](NOTIFICATIONS-OUTBOX.md).
+
+## Regras de lembrete e integração de domínio — TASK-BE-017
+
+GET/PUT `/reminders/{sourceType}/{sourceId}` configuram uma regra própria por
+TASK/EVENT/PUBLICATION (tipos em maiúsculas, ID UUID). Retorno `{rule: ReminderRule|null}`;
+GET sem configuração retorna null, origem inexistente/externa retorna 404 idêntico.
+Regra pública contém id,sourceType,sourceId,leadMinutes,enabled,version,createdAt,
+updatedAt; nunca contém ownerId, leases ou estado da outbox.
+
+PUT requer JSON estrito `{leadMinutes: inteiro 0–43200, enabled: boolean}` completo,
+sessão, Origin confiável e X-CSRF-Token. Nenhuma query aceita, nem ID do usuário no
+corpo. GET requer sessão, não cria configuração. CORS com credenciais/preflight PUT,
+Cache-Control no-store; erros padrão 400/401/403/404/409/413/415/500/503. 409 por
+limites reverte a operação inteira. Não há API pública de envio/manipulação da outbox.
+
+Criar uma atividade sem regra não habilita notificações implicitamente. Após criar
+a atividade, PUT da regra sincroniza sua janela na mesma transação. emailEnabled
+é a autorização mestre; dailyDigestEnabled não autoriza lembretes individuais.
+Regra desabilitada/e-mail desativado não gera intenções. Sem horário, tarefa com
+prazo civil usa 09:00 no fuso da preferência (ou da regra recorrente), conforme
+BE-016. Evento usa início efetivo; publicação usa scheduledAt, nunca publishedAt.
+
+Scopes de tarefas, eventos, publicações e recorrência ativam hooks em toda escrita
+relevante, inclusive arquivo/restauração, transições, checklist (que toca o mestre),
+versões/estados de séries e exceções individuais. Alteração, invalidação, criação
+e audit logs compartilham uma transação Prisma. O adaptador do repository executa
+callbacks transacionais existentes sobre a mesma TransactionClient, sem abrir
+transação aninhada. Ordem: usuário ativo → domínio → regras/outbox. Falhas de
+planejamento/DB/auditoria propagam e devem reverter o conjunto (Neon pendente).
+
+A sincronização invalida intenções vivas obsoletas e recria somente envios elegíveis
+em [agora,agora+30 dias], sem backfill. Recorrência usa versão atual ACTIVE e motor
+civil existente; completo/cancelado/arquivo/PAUSED/ENDED remove elegibilidade;
+retomada/reabertura recria apenas a janela atual. Exceção movida mantém sua data
+original, mesmo fora da janela civil buscada. Busca de datas é limitada a 62 dias
+futuros (+2 anteriores para diferenças de fuso), unida a exceções movidas com início
+nos próximos 60 dias. Máximo 100 candidatos por regra; excesso aborta, não trunca.
+Limites de 100 intenções vivas/regra e 1000/usuário da BE-016 continuam aplicáveis.
+
+A chave de idempotência existente é preservada. Repetir configuração/sincronização
+sem nova validade reutiliza a intenção. Escritas que tocam updatedAt do mestre
+conservadoramente invalidam sua janela inteira: podem criar novos IDs de histórico,
+mas não deixam duas intenções vivas equivalentes. Terminais e versões anteriores
+continuam no histórico; não são reabertos nem reenviados automaticamente.
+
+Alterar preferências temporais/e-mail/resumo pelo scope de BE-015 sincroniza regras
+e invalida resumos existentes atomicamente com a preferência (não cria conteúdo ou
+novos resumos). Limite de 100 regras e 100 resumos vivos por operação de preferência;
+409 reverte tudo se excedido. Sem regra explícita, nada é gerado.
+
+OpenAPI contém os DTOs públicos novos; contratos de CRUD existentes preservados.
+Sem schema/migration nova, e-mail, Cron, Queue, consumer ou frontend. Custos SQL,
+constraints, locks, rollback e concorrência reais precisam de validação Neon local.

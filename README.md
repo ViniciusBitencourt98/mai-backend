@@ -196,3 +196,11 @@ intenções idempotentes, leases/estados e histórico, via serviços internos se
 pública. Migration versionada, não aplicada; não há envio, Cron ou Queue.
 Ver [política, limites e próximos componentes](docs/NOTIFICATIONS-OUTBOX.md).
 Hooks transacionais de domínio, processamento e Neon real permanecem pendentes.
+
+
+## Regras e hooks de lembretes (TASK-BE-017)
+
+GET/PUT `/reminders/{sourceType}/{sourceId}` configuram uma regra própria. Scopes de
+domínio e preferências sincronizam a outbox atomicamente, com janela limitada e
+sem backfill. Sem opt-in explícito não há intenção automática. Ver [API](docs/API.md).
+Nenhum e-mail, Cron, Queue ou consumer foi implementado; Neon real continua pendente.

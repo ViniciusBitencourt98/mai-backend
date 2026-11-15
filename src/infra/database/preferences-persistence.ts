@@ -1,9 +1,10 @@
+import { synchronizeOwnerReminders } from './domain-reminders';
 import type { PrismaClient } from '../../generated/prisma/client';
 import type { PreferencesRepository } from '../../repositories/preferences.repository';
 import { preferenceDefaults } from '../../preferences/dto';
 const select = { name: true, preferences: { select: { timezone: true, emailEnabled: true, dailyDigestEnabled: true, dailyDigestTime: true } } } as const;
 const response = (row: { name: string; preferences: { timezone: string; emailEnabled: boolean; dailyDigestEnabled: boolean; dailyDigestTime: string } | null }) => ({ name: row.name, ...(row.preferences ?? preferenceDefaults) });
-export function createPreferencesRepository(client: PrismaClient): PreferencesRepository {
+export function createPreferencesRepository(client: PrismaClient, reminders = false): PreferencesRepository {
   return {
     async get(userId) {
       const row = await client.user.findFirst({ where: { id: userId, disabledAt: null }, select });
@@ -23,6 +24,7 @@ export function createPreferencesRepository(client: PrismaClient): PreferencesRe
           ...(patch.dailyDigestTime !== undefined ? { dailyDigestTime: patch.dailyDigestTime } : {}),
         };
         await tx.userPreferences.upsert({ where: { userId }, create: { userId, ...data }, update: data });
+        if (reminders && (patch.timezone !== undefined || patch.emailEnabled !== undefined || patch.dailyDigestEnabled !== undefined || patch.dailyDigestTime !== undefined)) await synchronizeOwnerReminders(tx, userId);
         const row = await tx.user.findFirst({ where: { id: userId, disabledAt: null }, select });
         return row ? response(row) : null;
       });

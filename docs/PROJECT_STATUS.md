@@ -5,7 +5,17 @@ observado, não certifica operação em produção. Atualizar junto de cada entr
 mude o estado; escopo em [MVP_SCOPE](MVP_SCOPE.md), sequência em
 [NEXT_STEPS](NEXT_STEPS.md) e regras em [DEVELOPMENT_WORKFLOW](DEVELOPMENT_WORKFLOW.md).
 
-## Atualização BE-016 (branch de implementação)
+## Atualização BE-017 (branch de implementação)
+
+Base main `013d49e`: BE-016 incorporada no PR #18. A branch
+`feat/BE-017-domain-reminders` integra os domínios à outbox na mesma transação
+e adiciona GET/PUT /reminders/{sourceType}/{sourceId}. Janela limitada e opt-in
+explícito, sem envio/dispatcher. Revisão/merge e Neon real pendentes; sem migration
+nova. Lint/typecheck/build e 538 testes locais em 30 arquivos passaram (14 novos);
+novo recorte OpenAPI validado. As tabelas anteriores são históricas e não
+comprovam validação integrada.
+
+## Atualização histórica BE-016 (incorporada no PR #18)
 
 Base main `db63079`: BE-015 incorporada no PR #17. A branch
 `feat/BE-016-notification-outbox` prepara ReminderRule, NotificationOutbox e

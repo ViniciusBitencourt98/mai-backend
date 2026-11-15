@@ -87,3 +87,12 @@ F5-08–11 adaptador/consumer/resultado/ack sem retry automático. PoCs F0-09/10
 validação Neon continuam necessárias antes do aceite integrado. F5-12/13 tratam
 observabilidade/reconciliação/reenvio manual autorizado; lease expirado jamais
 justifica reenvio automático. Não inventar novo ID BE para os próximos recortes.
+
+
+## Após BE-017
+
+BE-016 está incorporada no PR #18. BE-017 implementa F5-03 e a configuração mínima
+de regras na branch feat/BE-017-domain-reminders, aguardando revisão/incorporação.
+Frontend pode consumir GET/PUT /reminders após merge em tarefa própria. Ainda faltam
+renovação periódica de janela, conteúdo/resumo, dispatcher Cron, producer/consumer
+Queue, provedor e reconciliação/observabilidade. Neon real permanece pendente.

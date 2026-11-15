@@ -222,3 +222,24 @@ CRUDs são F5-03 pendente. Há adapter para compartilhar a transação de domín
 ordem futura de bloqueio usuário→origem→regra/outbox. Sem endpoints artificiais,
 Cron/Queue/Gmail, conteúdo/envio de resumo, frontend ou deploy neste recorte.
 Migration apenas versionada; integridade/concorrência reais aguardam Neon.
+
+## TASK-BE-017 — hooks transacionais de lembretes
+
+A configuração pública mínima é GET/PUT /reminders/{sourceType}/{sourceId}, com
+leadMinutes/enabled explícitos e owner da sessão; nenhuma rota técnica de outbox.
+Sem regra por entidade, não há opt-in automático na criação. emailEnabled governa
+lembretes, dailyDigestEnabled governa somente resumo, sem substituir a flag mestre.
+
+Hooks ativados nos scopes reais decoram as mutações dos repositories existentes:
+transação externa com lock do usuário e facade de TransactionClient reutiliza
+callbacks internos sem nested transactions. Repository original permanece utilizável
+isoladamente; scopes de produção sempre ativam os hooks. Preferências sincronizam
+na transação já existente. Não adicionar efeitos assíncronos após commit.
+
+Manter âncoras/09:00 e estados BE-016, janela de envio de 30 dias sem backfill,
+100 candidatos por regra e limites de intenções. Recorrências usam schedule e
+versão atual, exceções movidas somam suas datas originais à janela. Invalidação
+conservadora por timestamp pode substituir intenções após toque de metadados,
+sem duplicar intenções vivas. Falhas/limites abortam toda escrita, não retornam
+sucesso parcial. Nenhum retry automático ou envio foi habilitado. Não há schema
+novo; validação transacional/concorrência/custos em Neon permanece pendente.
