@@ -9,7 +9,8 @@
   "vars": {
     "CORS_ALLOWED_ORIGIN": "",
     "NOTIFICATION_BATCH_SIZE": "20",
-    "NOTIFICATION_LEASE_SECONDS": "60"
+    "NOTIFICATION_LEASE_SECONDS": "60",
+    "EMAIL_DELIVERY_ENABLED": "false"
   },
   "triggers": {
     "crons": [

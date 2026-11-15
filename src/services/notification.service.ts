@@ -32,7 +32,7 @@ export class NotificationService {
       return data;
     }, (data) => this.scheduled(data.scheduledAt));
   }
-  async createDigest(owner: string, input: unknown) {
+  async createDigest(owner: string, input: unknown, dueToday = false) {
     const { date } = parse(digestIntentDto, input);
     return this.repository.enqueue(owner, null, (context) => {
       const p = context.preferences;
@@ -42,7 +42,10 @@ export class NotificationService {
       return { type: 'DAILY_DIGEST', sourceType: null, sourceId: null, reminderRuleId: null, ruleVersion: null,
         sourceVersion: digestVersion(context), recurrenceRuleId: null, recurrenceVersion: null, occurrenceDate: null, digestDate: civilDate(date),
         timezone: p.timezone, scheduledAt, idempotencyKey: digest(JSON.stringify([owner, 'DAILY_DIGEST', date])) };
-    }, (data) => this.scheduled(data.scheduledAt));
+    }, (data) => {
+      if (dueToday && data.digestDate?.toISOString().slice(0,10) === localToday(this.now(), data.timezone) && data.scheduledAt <= this.now()) return;
+      this.scheduled(data.scheduledAt);
+    });
   }
   private valid(row: OutboxRecord, context: NotificationContext) {
     if (!context.preferences.emailEnabled) return false;

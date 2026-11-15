@@ -1,3 +1,4 @@
+import type { NotificationDelivery } from './delivery';
 import { z } from 'zod';
 import type { NotificationService } from '../services/notification.service';
 import type { NotificationJobRepository } from '../repositories/notification-job.repository';
@@ -11,7 +12,7 @@ export interface NotificationBindings {
   NOTIFICATION_LEASE_SECONDS?: string;
 }
 export type JobEvent = 'DISCOVERY_FAILED' | 'RESERVATION_FAILED' | 'PUBLICATION_FAILED' | 'CONFIRMATION_FAILED'
-  | 'QUEUED' | 'INVALID_MESSAGE' | 'OBSOLETE' | 'DATABASE_FAILED' | 'AWAITING_PUBLICATION' | 'PROVIDER_NOT_CONFIGURED';
+  | 'DELIVERY_FAILED' | 'PROVIDER_ACCEPTED' | 'DELIVERY_UNCERTAIN' | 'QUEUED' | 'INVALID_MESSAGE' | 'OBSOLETE' | 'DATABASE_FAILED' | 'AWAITING_PUBLICATION' | 'PROVIDER_NOT_CONFIGURED';
 // Only fixed categories and server-derived UUIDs; never log exception text or queue bodies.
 export type JobLogger = (event: JobEvent, outboxId?: string) => void;
 export const jobLogger: JobLogger = (event, outboxId) => console.info(JSON.stringify({ component: 'notifications', event, ...(outboxId ? { outboxId } : {}) }));
@@ -27,9 +28,10 @@ const unavailable = (error: unknown) => error instanceof HttpError && [401, 404,
 
 export class NotificationProcessor {
   constructor(private readonly jobs: NotificationJobRepository, private readonly notifications: NotificationService,
-    private readonly logger: JobLogger = jobLogger, private readonly now = () => new Date()) {}
+    private readonly logger: JobLogger = jobLogger, private readonly now = () => new Date(), private readonly delivery?: NotificationDelivery, private readonly planDigest?: () => Promise<void>) {}
 
   async dispatch(queue: Pick<Queue<NotificationMessage>, 'send'>, settings: { limit: number; seconds: number }) {
+    await this.planDigest?.();
     let candidates;
     try { candidates = await this.jobs.due(this.now(), settings.limit); }
     catch { this.logger('DISCOVERY_FAILED'); throw new Error('Notification discovery failed'); }
@@ -72,9 +74,9 @@ export class NotificationProcessor {
       if (row.status !== 'PUBLISHED' || row.scheduledAt > this.now()) {
         this.logger('OBSOLETE', id); message.ack(); return;
       }
-      // Future adapter boundary: revalidate and acquire a delivery lease here before
-      // an actual provider call. Do not mark SENT, FAILED or reserve delivery today.
-      this.logger('PROVIDER_NOT_CONFIGURED', id);
+      // Delivery owns the no-retry boundary after its reservation.
+      if (this.delivery) await this.delivery.deliver(row);
+      else this.logger('PROVIDER_NOT_CONFIGURED', id);
       message.ack();
     } catch (error) {
       if (unavailable(error)) { this.logger('OBSOLETE', id); message.ack(); return; }
