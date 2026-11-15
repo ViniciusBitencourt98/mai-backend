@@ -1,3 +1,4 @@
+import { createPreferencesRouter } from './routes/preferences.routes';
 import { createDashboardRouter } from './routes/dashboard.routes';
 import { createPublicationRouter } from './routes/publication.routes';
 import { createCalendarRouter } from './routes/calendar.routes';
@@ -29,6 +30,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(cors([allowedOrigins, ...(options.services?.auth.settings.trustedOrigins ?? [])].join(','), options.corsMethods));
   app.use(express.json({ limit: '100kb' }));
   app.use(healthRouter);
+  app.use('/me/preferences', createPreferencesRouter(options.services?.auth, options.services?.preferences));
   app.use('/auth', createAuthRouter(options.services?.auth));
   app.use('/projects', createProjectRouter(options.services?.auth, options.services?.projects));
   app.use('/publications', createPublicationRouter(options.services?.auth, options.services?.publications));

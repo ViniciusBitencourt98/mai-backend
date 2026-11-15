@@ -262,3 +262,14 @@ Reutiliza coleta/motores do calendário, owner/fuso da sessão, COUNT Prisma e
 limites explícitos; sem tabela/migration ou nova engine. Contrato OpenAPI e testes
 isolados preparados para revisão. Frontend F4-06 depende da incorporação deste PR;
 Neon real, custos SQL e aceite integrado permanecem pendentes. Não marcar gate remoto.
+
+
+## TASK-BE-015 — F1-08, preferências essenciais
+
+GET/PATCH /me/preferences implementados na branch feat/BE-015-user-preferences
+sobre main cc16ef3 (BE-014 incorporada, PR #16). Nome/fuso/e-mail reutilizados e
+resumo diário/HH:mm local adicionados à relação existente, com defaults e CHECK.
+DTO, serviço, repository real transacional, auth/CSRF, OpenAPI e testes isolados
+preparados para revisão; /auth/me preservado. Migration aditiva somente versionada,
+sem aplicação, credenciais, e-mail, frontend ou deploy. F1-08 completo ainda depende
+da interface e validação real; não marcar Neon nem gates remotos como aprovados.

@@ -663,3 +663,62 @@ Erros no envelope padrão: 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 CORS;
 falha. Em limites, consultar os endpoints de domínio com janelas menores.
 Contrato e exemplo completos em Dashboard/DashboardCounts no OpenAPI. Testes são
 isolados; Express/Workers → Prisma → Neon permanece pendente.
+
+## Perfil e preferências essenciais — TASK-BE-015 / F1-08
+
+| Método | Caminho | Resposta |
+|---|---|---|
+| GET | `/me/preferences` | 200 UserPreferences |
+| PATCH | `/me/preferences` | 200 UserPreferences atualizadas |
+
+Novo contrato de edição, sem duplicar ou alterar `/auth/me`. Resposta plana com
+`{name,timezone,emailEnabled,dailyDigestEnabled,dailyDigestTime}`; não inclui ID,
+e-mail, senha/hash ou token. Proprietário vem exclusivamente da sessão; sem ID na
+rota/corpo/query. GET e PATCH rejeitam qualquer query não vazia. Autenticação nos
+dois; PATCH exige Origin confiável, X-CSRF-Token e application/json. CORS com
+credenciais, Cache-Control no-store, X-Request-Id; preflight GET/HEAD/PATCH/OPTIONS.
+
+| Campo | Validação / padrão |
+|---|---|
+| name | User.name existente, trim, 1–100; mantém nome atual quando omitido |
+| timezone | Fuso reconhecido por Intl/IANA, até 100 caracteres, aceita UTC/aliases do runtime e rejeita offsets +/-; padrão America/Bahia |
+| emailEnabled | Booleano estrito; padrão false; preferência mestre para futuros e-mails |
+| dailyDigestEnabled | Booleano estrito; padrão false; opt-in do resumo futuro |
+| dailyDigestTime | HH:mm local de 00:00 a 23:59, exatamente cinco caracteres, sem segundos/offset; padrão 08:00 |
+
+PATCH parcial estrito exige pelo menos um campo. Ausência preserva; null é inválido
+para todos os campos. Não aceita coerção de string/number em booleanos nem campos
+de autenticação (e-mail, senha, disabledAt) ou userId/ownerId. Hora/fuso podem ser
+configurados com e-mail/resumo desativados. As duas flags são independentes:
+desativar e-mail não apaga opt-in/horário do resumo; um futuro envio de resumo
+precisará de emailEnabled **e** dailyDigestEnabled true. Não há envio ou job nesta
+API; políticas de disparo em horários locais inexistentes/ambíguos por DST serão
+tratadas no módulo de notificações, não por transformação deste horário em UTC.
+
+GET usa defaults se a relação UserPreferences ainda estiver ausente, sem gravar.
+PATCH faz upsert dessa relação, com defaults do banco para campos não fornecidos,
+e atualiza User.name na mesma transação. Revalida conta ativa e bloqueia sua linha
+antes de upsert; atualizações concorrentes enviam somente os campos fornecidos,
+evita sobrescrever campos omitidos. User.updatedAt registra alterações inclusive
+só de preferências. Conta removida/desativada retorna 401; falha intermediária
+propaga erro e o banco deve reverter a transação (validação real ainda pendente).
+
+`/auth/me` preserva a projeção antiga `user.name` e
+`user.preferences:{timezone,emailEnabled}`, sem adicionar os campos de resumo à
+sessão. O repository de autenticação lê preferências a cada requisição; próximas
+requisições autenticadas de calendário/dashboard/tarefas já recebem o novo fuso,
+sem re-login ou rotação de cookie/CSRF. O futuro frontend deve atualizar seu cache
+de sessão consultando `/auth/me` após PATCH e invalidar visões dependentes de fuso.
+Resumo/horário completos são consultados neste novo endpoint pelos consumidores.
+
+Mudar fuso não reescreve datas civis, instantes UTC de eventos/publicações nem
+fusos de regras de recorrência existentes. Não altera dados históricos, credenciais,
+sessões ou estado de notificações. Migration aditiva
+`20261115000100_user_preferences` apenas versionada, não aplicada, adiciona dois
+campos com defaults e CHECK de HH:mm. Sem novas tabelas/índices ou duplicação de nome.
+
+Erros no envelope padrão: 400 VALIDATION_ERROR/INVALID_JSON, 401 UNAUTHENTICATED,
+403 CORS/CSRF, 413 corpo >100 KiB, 415 mídia não JSON, 500 sanitizado e 503 serviço
+não configurado. Contrato UserPreferences/PatchUserPreferences e exemplos no
+OpenAPI. Integração Neon, concorrência/rollback e aplicação da migration seguem
+pendentes; não há envio de e-mail, Cron/Queues, frontend, ICS ou Google Calendar.

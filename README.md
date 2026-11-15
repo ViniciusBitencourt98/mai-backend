@@ -177,3 +177,13 @@ com semântica documentada. Listas limitadas por `limit` (padrão 10, máximo 20
 Reutiliza o calendário e os motores existentes; sem tabela ou migration nova.
 Ver [contrato e limites](docs/API.md#dashboard-operacional--task-be-014--f4-05).
 Frontend e validação integrada com Neon permanecem pendentes.
+
+
+## Perfil e preferências (TASK-BE-015)
+
+GET/PATCH `/me/preferences` permitem ler/editar nome, timezone, preferência mestre
+de e-mail, opt-in do resumo diário e horário HH:mm local. Sessão/CSRF e PATCH
+parcial estrito; `/auth/me` mantém seu contrato. Defaults: America/Bahia, e-mail e
+resumo false, horário 08:00. Não envia e-mail nem reescreve datas históricas.
+Migration aditiva versionada, não aplicada; frontend/Neon real pendentes.
+Ver [contrato](docs/API.md#perfil-e-preferências-essenciais--task-be-015--f1-08).
