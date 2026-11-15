@@ -167,3 +167,13 @@ sem types permanece TASK,EVENT; publicações exigem seleção explícita. A pro
 usa scheduledAt como ponto sem duração, exclui sem data/arquivadas/canceladas e
 preserva ownership/limites. Ver [API](docs/API.md#publicações-no-calendário--task-be-013).
 Sem migration nova ou alteração no frontend; Neon real permanece pendente.
+
+
+## Dashboard operacional (TASK-BE-014)
+
+`GET /dashboard` usa o dia/fuso da sessão (ou `date` civil explícita), retorna hoje,
+atrasos na janela de 30 dias anteriores, próximos itens em sete dias e contagens
+com semântica documentada. Listas limitadas por `limit` (padrão 10, máximo 20).
+Reutiliza o calendário e os motores existentes; sem tabela ou migration nova.
+Ver [contrato e limites](docs/API.md#dashboard-operacional--task-be-014--f4-05).
+Frontend e validação integrada com Neon permanecem pendentes.

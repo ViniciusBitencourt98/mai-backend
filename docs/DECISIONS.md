@@ -147,3 +147,26 @@ Publicações participam do orçamento global junto das expansões. Não alterar
 recorrência, CRUD/editorial, schema, autenticação ou migrations. A projeção usa
 índices já versionados na BE-012. Integração real com Neon permanece pendente;
 FE-017 deve consumir o novo tipo só após incorporação do contrato.
+
+## TASK-BE-014 — dashboard operacional com janelas explícitas
+
+GET /dashboard usa date civil opcional e fuso da sessão, sem override de owner ou
+timezone. Hoje mantém itens concluídos/publicados para contexto; listas futuras
+excluem tarefas concluídas, publicações PUBLISHED e identidades já mostradas hoje.
+Atraso é limitado aos 30 dias anteriores; próximos itens aos sete dias após o dia
+selecionado. Estes limites são explícitos no retorno e não representam todo o
+histórico. Listas até 20 (padrão 10), counts anteriores ao corte.
+
+pendingTasks conta mestres ativos não arquivados globalmente, inclusive sem prazo;
+o atraso conta tarefas/ocorrências incompletas da janela, sem duplicar o mestre.
+plannedPublications conta somente o horizonte de hoje+sete dias sem PUBLISHED.
+As unidades diferentes são documentadas para o frontend não tratar todos os
+indicadores como globais. Não criar tabela/cache ou analytics neste recorte.
+
+Reutilizar a coleta limitada do calendário e os motores de tarefas/eventos, sem
+segunda implementação de recorrência. Extrair collect interno preservando o
+resultado paginado de /calendar permite duas coletas disjuntas sem recomputar
+cada página/lista. As duas janelas mantêm seus limites de fonte; dashboard limita
+a soma visível a 10.000, sem truncamento silencioso. COUNT global fica no banco.
+Validar dias reais (DST/meia-noite suprimida), não adicionar 24h a instantes locais.
+Sem snapshot global prometido; sem nova migration, frontend, notificações ou deploy.

@@ -235,7 +235,7 @@ marcado e nenhum arquivo de implementação/migration foi alterado.
 
 | Próximo ID | Parcela / rastreabilidade | Dependências | Estado no levantamento |
 |---|---|---|---|
-| TASK-BE-013 | Publicações no calendário, backend de F4-04 | BE-010/011/012 incorporadas | Implementado nesta branch BE-013; revisão/merge e Neon pendentes |
+| TASK-BE-013 | Publicações no calendário, backend de F4-04 | BE-010/011/012 incorporadas | Incorporado na main (PR #15); Neon pendente |
 | TASK-FE-016 | Integração HTTP editorial, F4-03 | FE-015 e BE-012 incorporadas | Planejado no repo frontend, não alterado por este PR |
 | TASK-FE-017 | Publicações no calendário, frontend de F4-04 | BE-013 incorporada, FE-016, FE-013/014 | Planejado no repo frontend |
 
@@ -251,3 +251,14 @@ padrão. Projeção mínima por scheduledAt, sem duração/fallback, com status/
 projeto, ownership e recorte PostgreSQL limitado. Query, agregação, OpenAPI e testes
 isolados preparados para revisão; sem schema/migration nova nem alteração frontend.
 F4-04 completo ainda depende FE-017 e validação real. Não marcar gate Neon/remoto.
+
+
+## TASK-BE-014 — F4-05, API operacional de dashboard
+
+GET /dashboard implementado na branch feat/BE-014-dashboard-api a partir da main
+0ac482d (BE-013 incorporada). Hoje, atraso limitado a 30 dias anteriores, próximas
+tarefas/eventos/publicações em sete dias e indicadores com unidades documentadas.
+Reutiliza coleta/motores do calendário, owner/fuso da sessão, COUNT Prisma e
+limites explícitos; sem tabela/migration ou nova engine. Contrato OpenAPI e testes
+isolados preparados para revisão. Frontend F4-06 depende da incorporação deste PR;
+Neon real, custos SQL e aceite integrado permanecem pendentes. Não marcar gate remoto.

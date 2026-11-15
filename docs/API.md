@@ -35,7 +35,7 @@
 | GET/POST | `/api/v1/publications` | Publicações |
 | GET/PATCH/DELETE | `/api/v1/publications/:id` | Publicação individual |
 | GET | `/api/v1/calendar?from=&to=&types=` | Itens da janela da agenda, incluindo ocorrências |
-| GET | `/api/v1/dashboard?date=` | Resumo do dia |
+| GET | `/api/v1/dashboard?date=` | Proposta histórica; contrato implementado em `/dashboard` (BE-014) |
 | GET/PATCH | `/api/v1/notification-preferences` | Preferências e horário de resumo |
 | GET | `/api/v1/notifications` | Histórico de lembretes/envios |
 | GET | `/api/v1/exports/events.ics?from=&to=` | Proposta V2, não implementada; não bloqueia MVP |
@@ -599,3 +599,67 @@ Autenticação, CORS com credenciais, Cache-Control no-store e erros 400/401/403
 publicação automática, dashboard, notificações, ICS ou Google Calendar. Contrato e
 exemplo em CalendarPublication/CalendarPage no OpenAPI; persistência Neon real
 permanece pendente, não demonstrada pelos mocks dos testes isolados.
+
+## Dashboard operacional — TASK-BE-014 / F4-05
+
+`GET /dashboard` é a única rota implementada do resumo (não `/api/v1/dashboard`).
+Exige sessão, obtém proprietário/fuso IANA exclusivamente dela e retorna JSON com
+Cache-Control no-store, X-Request-Id e CORS com credenciais. Não há mutações, tabelas
+ou migrations próprias, analytics, e-mail ou alterações de contrato de `/calendar`.
+
+Query estrita: `date` opcional YYYY-MM-DD, padrão dia local no instante da requisição;
+`limit` inteiro textual 1–20, padrão 10, aplicado a cada lista. Rejeita campos
+extras/repetidos, inclusive ownerId/timezone/page. Data civil inexistente no fuso
+(ex.: dia suprimido por mudança de calendário) ou janela que extrapole anos
+0001–9999 retorna 400. Instantes UTC das janelas são calculados por limites civis,
+sem somar 24h: dias de DST podem durar 23/25h e meia-noite inexistente usa o primeiro
+instante válido. O fuso de apresentação não é presumido UTC.
+
+Resposta `Dashboard`: date,timezone,limit,windows,counts,today,overdueTasks,
+upcomingTasks,upcomingEvents,upcomingPublications. Cada lista é `{items,hasMore}`,
+com no máximo limit itens. Não há paginação do resumo; hasMore orienta consultar
+endpoints de domínio/calendário para explorar mais. Itens reutilizam integralmente
+CalendarTask/CalendarEvent/CalendarPublication e href/identidade type+id.
+
+| Seção | Semântica |
+|---|---|
+| windows.today / today | Dia civil selecionado [início,início do próximo dia). Tarefas civis cujo dia intersecta a janela no fuso do item, inclusive concluídas; eventos/ocorrências sobrepostos, inclusive atravessando meia-noite; publicações com scheduledAt na janela, inclusive PUBLISHED |
+| windows.overdue / overdueTasks | 30 dias civis anteriores, não todo o histórico. Só tarefas/ocorrências incompletas com data anterior ao primeiro dia de hoje no fuso do item e ausentes de today. Não usa ocorrências futuras como atraso |
+| windows.upcoming / upcomingTasks | Sete dias civis após o selecionado, sem tarefas concluídas nem itens já presentes em today |
+| upcomingEvents | Eventos/ocorrências nos próximos sete dias, excluindo os já exibidos em today; cancelamentos/movimentos tratados pelo motor existente |
+| upcomingPublications | Próximos sete dias; scheduledAt, nunca publishedAt; sem arquivadas/CANCELLED/PUBLISHED |
+
+Arquivo/cancelamento seguem o calendário; tarefa mestre recorrente não é
+retornada como tarefa pontual adicional. Estados individuais e exceções são
+calculados pelos serviços reais existentes. Séries PAUSED/ENDED seguem a política
+já existente de mostrar apenas estados/exceções salvos. Uma tarefa civil pode
+intersectar duas janelas UTC; a identidade exibida em today é retirada das listas
+laterais para não duplicar. Ordem determinística herdada: data civil/instante UTC,
+type e id asc. Eventos com duração não são transformados em tarefas; publicações
+são pontos sem duração fictícia. Edição de status não é efeito desta leitura.
+
+| Contador | Unidade e alcance (antes de limitar listas) |
+|---|---|
+| pendingTasks | Agregado PostgreSQL global por tarefa principal própria não arquivada PENDING/IN_PROGRESS; inclui sem prazo e cada mestre recorrente uma vez, mesmo com regra pausada/encerrada. Não soma ocorrências; não depende do dia consultado |
+| overdueTasks | Tarefas/ocorrências incompletas na janela de atraso de 30 dias, após excluir today. Não é total histórico global de atrasos |
+| todayActivities | Todos os itens em today, inclusive tarefas concluídas e publicações PUBLISHED |
+| plannedPublications | Publicações diferentes de PUBLISHED entre início do dia selecionado e fim dos sete dias seguintes; não é contagem global |
+
+Performance: duas coletas limitadas e disjuntas em uma execução do escopo de
+calendário: TASK nos 30 dias passados, todos os tipos em hoje+sete dias seguintes.
+`CalendarService.collect` contém a agregação existente; `/calendar` continua
+paginando o mesmo resultado. Não recalcular agregação para cada lista ou página.
+Cada coleta herda até 100 mestres/registros por tipo e orçamento 10.000 de expansão
+(inclusive ocorrências canceladas antes de ocultar). Somadas, no máximo 10.000
+projeções visíveis podem ser processadas pelo dashboard; excesso gera erro, não
+resposta parcial. A contagem global usa COUNT no banco, sem carregar todas as
+linhas. Plano SQL/custos reais ainda dependem de validação Neon. Não há snapshot
+transacional global entre count, coletas e scopes de recorrência; mudanças
+concorrentes podem afetar a consistência temporal do resumo.
+
+Erros no envelope padrão: 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 CORS;
+409 DASHBOARD_LIMIT/CALENDAR_LIMIT ou limites dos motores delegados; 500 genérico;
+503 serviço não configurado. Dados/contagens não são substituídos por zeros em
+falha. Em limites, consultar os endpoints de domínio com janelas menores.
+Contrato e exemplo completos em Dashboard/DashboardCounts no OpenAPI. Testes são
+isolados; Express/Workers → Prisma → Neon permanece pendente.

@@ -1,3 +1,5 @@
+import { createDashboardScope } from '../infra/database/dashboard-scope';
+import type { DashboardDependencies } from './dashboard.service';
 import { createPublicationScope } from '../infra/database/publication-scope';
 import type { PublicationDependencies } from './publication.service';
 import { createCalendarScope } from '../infra/database/calendar-scope';
@@ -32,8 +34,9 @@ export function createApplicationServices(bindings: DatabaseBindings & AuthBindi
   const recurrence: RecurrenceDependencies = { run: createRecurrenceScope(bindings) };
   const events: EventDependencies = { run: createEventScope(bindings) };
   const calendar:CalendarDependencies={run:createCalendarScope(bindings)};
-  return { publications, calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
+  const dashboard: DashboardDependencies = { run: createDashboardScope(bindings) };
+  return { dashboard, publications, calendar, events, recurrence, tasks, decupages, notes, projects, withTechnicalProbes: createPersistenceScope(bindings),
     auth };
 }
 
-export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar' | 'publications'> & { publications?: PublicationDependencies; projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };
+export type ApplicationServices = Omit<ReturnType<typeof createApplicationServices>, 'projects' | 'notes' | 'decupages' | 'tasks' | 'recurrence' | 'events' | 'calendar' | 'publications' | 'dashboard'> & { dashboard?: DashboardDependencies; publications?: PublicationDependencies; projects?: ProjectDependencies; notes?: NoteDependencies; decupages?: DecupageDependencies; tasks?: TaskDependencies; recurrence?: RecurrenceDependencies; events?: EventDependencies; calendar?: CalendarDependencies };

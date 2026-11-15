@@ -8,6 +8,10 @@ import { HttpError } from '../errors/http-error';
 export class CalendarService {
  constructor(private readonly repository:CalendarRepository,private readonly recurrence:RecurrenceDependencies,private readonly events:EventDependencies){}
  async list(ownerId:string,q:CalendarQuery,timezone:string){
+  const result=await this.collect(ownerId,q,timezone);
+  const offset=(q.page-1)*q.limit;return {...result,items:result.items.slice(offset,offset+q.limit),page:{number:q.page,limit:q.limit,hasMore:result.items.length>offset+q.limit}};
+ }
+ async collect(ownerId:string,q:Pick<CalendarQuery,'from'|'to'|'types'>,timezone:string){
   const items:CalendarItem[]=[];let expanded=0;
   const capacity=(count=0)=>{expanded+=count;if(expanded>10000||items.length>10000)throw new HttpError(409,'CALENDAR_LIMIT','Maximum 10000 calendar items; narrow the window');};
   const origin=(m:CalendarMaster,date:string|null)=>({timezone:m.rule?.timezone??m.timezone,id:date?`${m.rule!.id}:${date}`:m.id,masterId:m.id,ruleId:m.rule?.id??null,version:m.rule?.version??null,occurrenceDate:date,title:m.title,recurring:m.rule!==null,modified:date?m.rule!.modifiedDates.includes(date):false});
@@ -44,7 +48,7 @@ export class CalendarService {
    }
   }
   items.sort((a,b)=>{const x=a.type==='TASK'?a.date:a.type==='EVENT'?a.startAt:a.scheduledAt,y=b.type==='TASK'?b.date:b.type==='EVENT'?b.startAt:b.scheduledAt;return x.localeCompare(y)||a.type.localeCompare(b.type)||a.id.localeCompare(b.id);});
-  const offset=(q.page-1)*q.limit;return {items:items.slice(offset,offset+q.limit),page:{number:q.page,limit:q.limit,hasMore:items.length>offset+q.limit},timezone};
+  return {items,timezone};
  }
  private bound(masters:readonly unknown[]){if(masters.length>100)throw new HttpError(409,'CALENDAR_LIMIT','Maximum 100 matching masters per type; use types or narrow the window');}
 }
