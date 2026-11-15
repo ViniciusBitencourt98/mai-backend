@@ -518,3 +518,10 @@ model NotificationDeliveryLog {
   @@index([ownerId,outboxId,attemptedAt,id])
   @@map("notification_delivery_log")
 }
+
+// Internal bounded Cron maintenance progress; not notification delivery state.
+model NotificationMaintenanceCursor {
+  name String @id @db.VarChar(50)
+  lastRuleId String? @map("last_rule_id") @db.Uuid
+  @@map("notification_maintenance_cursors")
+}

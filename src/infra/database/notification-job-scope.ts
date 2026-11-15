@@ -1,3 +1,4 @@
+import { renewReminders } from './reminder-renewal';
 import { GmailTransport, type EmailBindings } from '../../notifications/email';
 import { NotificationDelivery } from '../../notifications/delivery';
 import { createEmailContent } from './email-content';
@@ -13,7 +14,7 @@ export async function withNotificationProcessor<T>(bindings: DatabaseBindings & 
   try {
     const service = new NotificationService(createNotificationRepository(client));
     const delivery = bindings.EMAIL_DELIVERY_ENABLED === 'true' ? new NotificationDelivery(service,createEmailContent(client,bindings),new GmailTransport(bindings),jobLogger) : undefined;
-    return await operation(new NotificationProcessor(createNotificationJobRepository(client), service, jobLogger, () => new Date(), delivery, () => planDigests(client,service)));
+    return await operation(new NotificationProcessor(createNotificationJobRepository(client), service, jobLogger, () => new Date(), delivery, async () => { try { await renewReminders(client); } catch { jobLogger('RENEWAL_FAILED'); } await planDigests(client,service); }));
   } finally {
     // A disconnect error must not leak a URL/driver error into Workers logs.
     try { await client.$disconnect(); } catch { jobLogger('DATABASE_FAILED'); }

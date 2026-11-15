@@ -68,3 +68,18 @@ it('renders empty and populated digest with explicit truncation and civil date',
  empty.today.items.push({type:'TASK',title:'Planejar <vídeo>',date:'2026-11-15',timezone:'America/Bahia',completed:false,masterId:'a'} as never);
  empty.today.hasMore=true;const result=digestTemplate(empty);expect(result.html).toContain('&lt;vídeo&gt;');expect(result.text).toContain('Há mais atividades');expect(result.subject).toContain('2026-11-15');
 });
+
+it('folds long UTF-8 subjects into RFC 2047 words without corrupting characters',async()=>{
+ const {encodedSubject}=await import('../../src/notifications/email');
+ const subject='Título com emoji 🎬 e acentuação '.repeat(20),encoded=encodedSubject(subject);
+ const words=encoded.split('\r\n ');expect(words.length).toBeGreaterThan(1);
+ expect(words.every(word=>word.length<=75)).toBe(true);
+ expect(words.map(word=>Buffer.from(word.slice(10,-2),'base64').toString('utf8')).join('')).toBe(subject);
+});
+it('redelivery after uncertain acceptance never calls the provider again',async()=>{
+ const f=deliveryFixture();f.service.accepted.mockRejectedValue(new Error('DB failed'));
+ await f.delivery.deliver(f.row);
+ f.service.reserve.mockRejectedValue(new Error('Reservation still held'));
+ await expect(f.delivery.deliver(f.row)).rejects.toThrow('Reservation still held');
+ expect(f.transport.send).toHaveBeenCalledOnce();expect(f.service.fail).not.toHaveBeenCalled();
+});
