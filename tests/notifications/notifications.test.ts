@@ -1,3 +1,6 @@
+import { NotificationDelivery } from '../../src/notifications/delivery';
+import { NotificationProcessor } from '../../src/notifications/processing';
+import { vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { NotificationService } from '../../src/services/notification.service';
@@ -130,4 +133,29 @@ it('bounds internal lists/history with stable status filtering',async()=>{
   const app=fixture();await app.service.createDigest('A',{date:'2026-11-15'});await app.service.createDigest('A',{date:'2026-11-16'});
   const page=await app.service.list('A',{limit:'1'});expect(page.items).toHaveLength(1);expect(page.page.hasMore).toBe(true);expect((await app.service.list('A',{limit:'1',page:'2'})).page.hasMore).toBe(false);
   expect((await app.service.history('A',page.items[0]!.id,{limit:'1'})).items).toHaveLength(1);
+});
+
+it('plans overdue daily summary once for the current local day without backfilling previous days',async()=>{
+ const f=fixture();f.setTime('2026-11-15T08:05:00Z');
+ const first=await f.service.createDigest('A',{date:'2026-11-15'},true);
+ const second=await f.service.createDigest('A',{date:'2026-11-15'},true);
+ expect(second.id).toBe(first.id);expect(f.rows.size).toBe(1);
+ await expect(f.service.createDigest('A',{date:'2026-11-14'},true)).rejects.toMatchObject({status:409});
+ f.preferences.emailEnabled=false;await expect(f.service.createDigest('A',{date:'2026-11-15'},true)).rejects.toMatchObject({status:409});
+});
+
+it('composes consumer and real state transitions: concurrent duplicates call provider once and persist SENT',async()=>{
+ const f=fixture();f.setTime(new Date().toISOString());
+ f.setSource({at:new Date(Date.now()+3600000),version:'a'.repeat(64),timezone:'UTC',recurrenceRuleId:null,recurrenceVersion:null,occurrenceDate:null});
+ const rule=await f.rule();const row=await f.service.createReminder('A',{reminderRuleId:rule.id});
+ f.setTime(new Date(Date.now()+2000).toISOString());
+ const claim=await f.service.reserve('A',row.id);await f.service.published('A',row.id,claim.leaseToken!);
+ const send=vi.fn().mockResolvedValue({providerMessageId:'observed'});
+ const delivery=new NotificationDelivery(f.service,{prepare:async()=>({to:'test@example.invalid',subject:'MAI',text:'Text',html:'<p>Text</p>'})},{send},()=>{});
+ const processor=new NotificationProcessor({due:async()=>[],locate:async()=>({id:row.id,ownerId:'A'})},f.service,()=>{},()=>new Date(Date.now()+2000),delivery);
+ const messages=[1,2,3].map(()=>({body:{version:1,outboxId:row.id},ack:vi.fn(),retry:vi.fn()}));
+ await Promise.all(messages.map(m=>processor.consume(m)));
+ expect(send).toHaveBeenCalledOnce();expect((await f.service.get('A',row.id)).status).toBe('SENT');
+ messages.forEach(m=>{expect(m.ack).toHaveBeenCalledOnce();expect(m.retry).not.toHaveBeenCalled();});
+ expect(f.logs.filter(log=>log.result==='PROVIDER_ACCEPTED')).toHaveLength(1);
 });

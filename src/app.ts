@@ -1,3 +1,4 @@
+import { createNotificationRouter } from './routes/notification.routes';
 import {createReminderRouter} from './routes/reminder.routes';
 import { createPreferencesRouter } from './routes/preferences.routes';
 import { createDashboardRouter } from './routes/dashboard.routes';
@@ -31,6 +32,7 @@ export function createApp(allowedOrigins = '', options: AppOptions = {}) {
   app.use(cors([allowedOrigins, ...(options.services?.auth.settings.trustedOrigins ?? [])].join(','), options.corsMethods));
   app.use(express.json({ limit: '100kb' }));
   app.use(healthRouter);
+  app.use('/notifications',createNotificationRouter(options.services?.auth,options.services?.notifications));
   app.use('/me/preferences', createPreferencesRouter(options.services?.auth, options.services?.preferences));
   app.use('/reminders',createReminderRouter(options.services?.auth,options.services?.reminders));
   app.use('/auth', createAuthRouter(options.services?.auth));

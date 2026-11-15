@@ -304,3 +304,16 @@ infraestrutura limitado/DLQ. Não marcar F0-09/F0-10 ou F5-14 remotos como aprov
 567 testes/32 arquivos, lint/typecheck/build dry-run passaram; Neon/infra remota
 não executados. Sem envio, migration nova, frontend ou deploy.
 Detalhes, política e pendências: [CRON-QUEUES](CRON-QUEUES.md).
+
+## TASK-BE-019 — entrega por e-mail, resumo e histórico (para revisão)
+
+Base main `5e7b3aa` (BE-018, PR #20). Branch `feat/BE-019-email-delivery-digest`.
+Adaptador Gmail API HTTP/OAuth2 real, templates HTML/texto, planner diário limitado
+com identidade owner/dia local e resumo reutilizando dashboard/calendário.
+Consumer reserva entrega, revalida e registra aceite/falha sem retry de envio;
+resultado incerto após aceite não autoriza reenvio automático.
+GET /notifications e GET /notifications/:id autenticados, com paginação/filtros,
+ownership e DTO público sem leases. OpenAPI atualizado. Sem migration nova.
+EMAIL_DELIVERY_ENABLED=false por padrão; nenhum e-mail, acesso Neon, recurso remoto
+ou deploy nesta tarefa. Configuração, decisão OAuth, limites e cenários pendentes
+em [EMAIL-DELIVERY](EMAIL-DELIVERY.md). Os registros anteriores são históricos.

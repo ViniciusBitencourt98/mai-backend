@@ -16,3 +16,10 @@ AUTH_COOKIE_SAME_SITE="lax"
 NOTIFICATION_BATCH_SIZE="20"
 NOTIFICATION_LEASE_SECONDS="60"
 # Cron a cada minuto; sem banco, apenas HTTP /health e testes isolados funcionam.
+
+# Envio real fica desabilitado por padrão. Não habilitar em testes Code First.
+EMAIL_DELIVERY_ENABLED="false"
+# APPLICATION_URL="https://app.example.invalid"
+# GMAIL_FROM deve ser a caixa autorizada ou alias validado.
+# Configurar GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN e GMAIL_FROM
+# exclusivamente em configuração local ignorada/secrets Workers; não versionar valores.

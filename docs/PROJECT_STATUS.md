@@ -1,5 +1,19 @@
 # Estado do Projeto MAI
 
+## TASK-BE-019 — entrega por e-mail, resumo e histórico (para revisão)
+
+Base main `5e7b3aa` (BE-018, PR #20). Branch `feat/BE-019-email-delivery-digest`.
+Adaptador Gmail API HTTP/OAuth2 real, templates HTML/texto, planner diário limitado
+com identidade owner/dia local e resumo reutilizando dashboard/calendário.
+Consumer reserva entrega, revalida e registra aceite/falha sem retry de envio;
+resultado incerto após aceite não autoriza reenvio automático.
+GET /notifications e GET /notifications/:id autenticados, com paginação/filtros,
+ownership e DTO público sem leases. OpenAPI atualizado. Sem migration nova.
+EMAIL_DELIVERY_ENABLED=false por padrão; nenhum e-mail, acesso Neon, recurso remoto
+ou deploy nesta tarefa. Configuração, decisão OAuth, limites e cenários pendentes
+em [EMAIL-DELIVERY](EMAIL-DELIVERY.md). Os registros anteriores são históricos.
+
+
 ## Atualização BE-018 (branch de implementação)
 
 Base main `afccbe3`: BE-017 incorporada no PR #19. Branch
@@ -230,3 +244,9 @@ precisa de fluxo completo com sessões e dados reais. Roteiro inicial em
 - Persistência real, segurança com dois usuários, backup/restauração, Gmail/Queues/
   Cron e publicação hospedada continuam sem aceite comprovado. Próximas ações
   rastreáveis em [NEXT_STEPS](NEXT_STEPS.md).
+
+Validação BE-019: lint/typecheck/build dry-run aprovados; **595 testes em 35
+arquivos passaram**, zero skips na suíte local. Inclui composição concorrente
+consumer+serviço (um aceite do provedor e um SENT com mensagens duplicadas).
+O contrato OpenAPI anterior permaneceu idêntico; novos endpoints têm segurança,
+DTOs e erros documentados. Validação externa Neon/Gmail/Cron/Queues não executada.
