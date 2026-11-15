@@ -273,3 +273,14 @@ DTO, serviço, repository real transacional, auth/CSRF, OpenAPI e testes isolado
 preparados para revisão; /auth/me preservado. Migration aditiva somente versionada,
 sem aplicação, credenciais, e-mail, frontend ou deploy. F1-08 completo ainda depende
 da interface e validação real; não marcar Neon nem gates remotos como aprovados.
+
+
+## TASK-BE-016 — F5-01/F5-02, estrutura interna de notificações/outbox
+
+Implementada na branch feat/BE-016-notification-outbox sobre main db63079 (BE-015
+incorporada no PR #17). Três modelos, migration aditiva, DTOs/serviço/repositories
+reais, idempotência, validação de origem/owner, leases/estados e logs transacionais.
+Política O-09/O-10 e limites em NOTIFICATIONS-OUTBOX.md. Preparada para revisão;
+sem migration aplicada, endpoint novo, hooks automáticos de CRUD, envio, Cron,
+Queue ou frontend. F5-03 e processamento/resumo completos continuam pendentes;
+Neon/constraints/concorrência real não foram validados.

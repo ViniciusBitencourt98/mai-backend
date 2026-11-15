@@ -215,3 +215,34 @@ User.updated_at registra a mudança. Sessões, credenciais, tarefas/eventos/publ
 e fusos das regras permanecem intactos. Rollback removendo os dois campos perde
 configurações de resumo, exigindo decisão/backup; não há rollback automático.
 Validar tipos/defaults/CHECK/upsert/concorrência/rollback em Neon local futuramente.
+
+## Fundação de notificações — TASK-BE-016
+
+Três modelos físicos novos, sem alterar campos de domínio/preferências:
+ReminderRule/reminder_rules (origem polimórfica, antecedência, enabled, versão,
+owner/auditoria); NotificationOutbox/notification_outbox (tipo, origem e regra,
+versões, ocorrência original ou dia civil de resumo, fuso, scheduled_at UTC,
+status/lease/resultados/idempotência); NotificationDeliveryLog/notification_delivery_log
+(trilha de transições com estado/resultado/categoria e identificador opaco do provedor).
+São os nomes definitivos deste recorte, substituindo o esboço transaction_outbox
+para implementação; não criar segunda outbox baseada na tabela lógica inicial.
+
+Enums tipados e CHECKs distinguem referência de lembrete/resumo, tupla recorrente,
+lease coerente com RESERVED e timestamps/resultados terminais. Chave única
+(owner_id,idempotency_key), resumo único (owner_id,type,digest_date), regra única
+(owner_id,source_type,source_id). FKs compostas para regra/outbox/log preservam
+ownership. Origem polimórfica é validada pelo repository, não por FK a Task/Event/
+Publication; exclusão/mudança torna a intenção inelegível. Logs não armazenam
+credenciais, corpo de e-mail nem resposta livre do provedor.
+
+Índices de outbox por (status,scheduled_at), (status,lease_until),
+(owner_id,scheduled_at,id), (owner_id,reminder_rule_id,status); histórico por
+(owner_id,outbox_id,attempted_at,id). FKs RESTRICT preservam histórico; não há
+retenção/exclusão automática. Migration 20261115000200_notification_outbox aditiva,
+versionada e não aplicada; rollback removendo tabelas/enums perde histórico e
+exige backup/decisão. Preservar CHECKs manuais em futuras migrations Prisma.
+
+Política/limites/máquina de estados em [NOTIFICATIONS-OUTBOX](NOTIFICATIONS-OUTBOX.md).
+A integração transacional aos CRUDs e o processamento assíncrono são próximos
+componentes; não foram entregues por criar estes modelos/serviços. Validação
+PostgreSQL de constraints/leases/concorrência/rollback ainda pendente.
