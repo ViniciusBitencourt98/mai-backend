@@ -417,3 +417,22 @@ bloqueado por 403 do CDN. Sem desabilitar TLS/checksum nem alterar lockfile.
 Neon e testes de infraestrutura reais **não executados**, sem migrations/deploy.
 Suítes simuladas não comprovam locks/rollback/constraints/índices PostgreSQL ou
 Cron/Queues/DLQ remotos. Procedimentos e política em [CRON-QUEUES](CRON-QUEUES.md).
+
+## TASK-BE-019 — entrega por e-mail, resumo e histórico (para revisão)
+
+Base main `5e7b3aa` (BE-018, PR #20). Branch `feat/BE-019-email-delivery-digest`.
+Adaptador Gmail API HTTP/OAuth2 real, templates HTML/texto, planner diário limitado
+com identidade owner/dia local e resumo reutilizando dashboard/calendário.
+Consumer reserva entrega, revalida e registra aceite/falha sem retry de envio;
+resultado incerto após aceite não autoriza reenvio automático.
+GET /notifications e GET /notifications/:id autenticados, com paginação/filtros,
+ownership e DTO público sem leases. OpenAPI atualizado. Sem migration nova.
+EMAIL_DELIVERY_ENABLED=false por padrão; nenhum e-mail, acesso Neon, recurso remoto
+ou deploy nesta tarefa. Configuração, decisão OAuth, limites e cenários pendentes
+em [EMAIL-DELIVERY](EMAIL-DELIVERY.md). Os registros anteriores são históricos.
+
+Validação BE-019: lint/typecheck/build dry-run aprovados; **595 testes em 35
+arquivos passaram**, zero skips na suíte local. Inclui composição concorrente
+consumer+serviço (um aceite do provedor e um SENT com mensagens duplicadas).
+O contrato OpenAPI anterior permaneceu idêntico; novos endpoints têm segurança,
+DTOs e erros documentados. Validação externa Neon/Gmail/Cron/Queues não executada.
